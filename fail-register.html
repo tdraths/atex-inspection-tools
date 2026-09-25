@@ -213,7 +213,7 @@ footer p{margin:0 0 6px;max-width:76ch;}
   <header class="top">
     <div class="title-block">
       <h1><span class="mark"></span>Ex Fail Register</h1>
-      <p>Open Comments across every F2/F3 fail — grouped, tagged, and sorted so the quick wins don't hide behind the hard ones.</p>
+      <p>Open Comments across every F2/F3 fail - grouped, tagged, and sorted so the quick wins don't hide behind the hard ones.</p>
     </div>
     <div class="hdr-right">
       <div class="hdr-stats" id="hdrStats"></div>
@@ -269,8 +269,8 @@ footer p{margin:0 0 6px;max-width:76ch;}
   </div>
 
   <footer>
-    <p><b style="color:var(--text-dim)">How "resolution type" is worked out:</b> each Open Comment is read against a set of keyword rules — “outstanding / required” documentation reads as <i>Chase paperwork</i>, “pending / to determine suitability” reads as <i>Info / review needed</i>, “to be installed / missing / cut” reads as <i>Physical work</i>, and nameplate or CE-marking mismatches read as <i>Compliance</i>. It's a heuristic reading of the wording AVS logged, not a judgment call by AVS or Anthropic — check the underlying comment before treating a categorisation as final.</p>
-    <p><b style="color:var(--text-dim)">Uploads and tracking:</b> uploading a workbook replaces the data below and is saved only in this browser, on this device — nothing is sent anywhere. Ticking an item as resolved is tracked the same way, matched to that exact comment line, so re-uploading a fresh export keeps your progress as long as the wording hasn't changed.</p>
+    <p><b style="color:var(--text-dim)">How "resolution type" is worked out:</b> each Open Comment is read against a set of keyword rules - “outstanding / required” documentation reads as <i>Chase paperwork</i>, “pending / to determine suitability” reads as <i>Info / review needed</i>, “to be installed / missing / cut” reads as <i>Physical work</i>, and nameplate or CE-marking mismatches read as <i>Compliance</i>. It's a heuristic reading of the wording AVS logged, not a judgment call by AVS or Anthropic - check the underlying comment before treating a categorisation as final.</p>
+    <p><b style="color:var(--text-dim)">Uploads and tracking:</b> uploading a workbook replaces the data below and is saved only in this browser, on this device - nothing is sent anywhere. Ticking an item as resolved is tracked the same way, matched to that exact comment line, so re-uploading a fresh export keeps your progress as long as the wording hasn't changed.</p>
   </footer>
 
 </div>
@@ -278,7 +278,7 @@ footer p{margin:0 0 6px;max-width:76ch;}
 <div class="modal-backdrop" id="reportBackdrop">
   <div class="modal">
     <h2>Work list</h2>
-    <p class="sub">Plain text of every unresolved open item currently matching your filters — grouped by fail. Select all and copy into an email or message.</p>
+    <p class="sub">Plain text of every unresolved open item currently matching your filters - grouped by fail. Select all and copy into an email or message.</p>
     <textarea id="reportText" readonly></textarea>
     <div class="modal-actions">
       <button class="btn small" id="reportSelectAll" type="button">Select all text</button>
@@ -399,7 +399,7 @@ function parseWorkbookToRows(workbook){
 
   const missing = Object.values(ID_COLS).filter(col => !(col in (records[0]||{})) );
   if(records.length === 0 || missing.length > Object.values(ID_COLS).length - 6){
-    throw new Error('This doesn\'t look like the Ex fail register export — expected columns like "Overall Pass/Fail" and "Tag No. / Item No." weren\'t found.');
+    throw new Error('This doesn\'t look like the Ex fail register export - expected columns like "Overall Pass/Fail" and "Tag No. / Item No." weren\'t found.');
   }
 
   const rows = records.map((rec, idx) => {
@@ -531,7 +531,7 @@ function refreshUploadBar(){
     t.innerHTML = `Using the <b>built-in sample</b> (${SOURCE_META.rowCount} fails). Upload your own export to replace it.`;
   } else {
     const when = SOURCE_META.uploadedAt ? new Date(SOURCE_META.uploadedAt).toLocaleString() : 'earlier';
-    t.innerHTML = `Using <span class="src-file">${escapeHtml(SOURCE_META.filename||'uploaded file')}</span> — ${SOURCE_META.rowCount} fails, uploaded ${when}. Saved on this device only.`;
+    t.innerHTML = `Using <span class="src-file">${escapeHtml(SOURCE_META.filename||'uploaded file')}</span> - ${SOURCE_META.rowCount} fails, uploaded ${when}. Saved on this device only.`;
   }
 }
 
@@ -627,7 +627,7 @@ function renderCard(r){
         <input class="note-input" type="text" placeholder="Add a note (who it's assigned to, status…)" value="${escapeHtml(st.note||'')}" data-row="${r.row_id}" data-ci="${ci}">
       </div>
     </div>`;
-  }).join('') : `<div class="no-open">No open comments logged — check Progress / Overall status.</div>`;
+  }).join('') : `<div class="no-open">No open comments logged - check Progress / Overall status.</div>`;
 
   const closedHtml = closedComments.length ? `<div class="comment"><div class="check"></div><div class="rail" style="background:var(--line)"></div><div class="comment-body"><div class="comment-tags"><span class="tag-source">Closed note</span></div><div class="comment-text" style="color:var(--text-faint)">${escapeHtml(closedComments.map(c=>c.text).join(' · '))}</div></div></div>` : '';
 
@@ -647,7 +647,7 @@ function renderCard(r){
     <div class="card-head">
       <svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 6 15 12 9 18"/></svg>
       <div class="card-main">
-        <div class="card-tag">${escapeHtml(r.tag_no||'—')}<span class="eq">${escapeHtml(r.equipment||'')}</span></div>
+        <div class="card-tag">${escapeHtml(r.tag_no||'-')}<span class="eq">${escapeHtml(r.equipment||'')}</span></div>
         <div class="card-sub">${escapeHtml([r.manufacturer, r.model].filter(Boolean).join(' · '))}</div>
       </div>
       <div class="card-badges">
@@ -765,7 +765,7 @@ const reportBackdrop = document.getElementById('reportBackdrop');
 document.getElementById('reportBtn').addEventListener('click', ()=>{
   const filtered = sortRows(ROWS.filter(rowMatches));
   const lines = [];
-  lines.push(`Ex Fail Register — work list`);
+  lines.push(`Ex Fail Register - work list`);
   lines.push(`Generated ${new Date().toLocaleString()}`);
   lines.push('');
   let itemCount = 0;
@@ -775,7 +775,7 @@ document.getElementById('reportBtn').addEventListener('click', ()=>{
       return !(st && st.resolved);
     });
     if(!openComments.length) return;
-    lines.push(`${r.tag_no||'—'} — ${r.equipment||''} (${[r.manufacturer,r.model].filter(Boolean).join(' ')})`);
+    lines.push(`${r.tag_no||'-'} - ${r.equipment||''} (${[r.manufacturer,r.model].filter(Boolean).join(' ')})`);
     if(r.area) lines.push(`  ${r.area}${r.location ? ' · '+r.location : ''}`);
     openComments.forEach(c=>{
       const refs = c.refs && c.refs.length ? `Qs ${c.refs.join(', ')}: ` : '';
