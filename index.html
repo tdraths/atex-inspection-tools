@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AVS Inspection Tools</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --navy:#1B2430;
+    --navy-2:#232E3D;
+    --paper:#F6F4EF;
+    --paper-2:#EDEAE1;
+    --ink:#1B2430;
+    --steel:#5B6577;
+    --amber:#C8880A;
+    --amber-bg:#FBF0DA;
+    --line:#D8D4C8;
+    --font-display: 'Space Grotesk', sans-serif;
+    --font-body: 'IBM Plex Sans', sans-serif;
+    --font-data: 'IBM Plex Mono', monospace;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{font-family:var(--font-body); background:var(--paper); color:var(--ink); line-height:1.55; -webkit-font-smoothing:antialiased;}
+  a{color:inherit; text-decoration:none;}
+  .wrap{max-width:1040px; margin:0 auto; padding:0 32px;}
+
+  header.hero{background:var(--navy); color:var(--paper); padding:52px 0 46px;}
+  .eyebrow{font-family:var(--font-data); font-size:12.5px; color:#C9CFDA; margin:0 0 14px; display:flex; align-items:center; gap:10px;}
+  .eyebrow .dot{width:7px;height:7px;border-radius:50%;background:var(--amber);display:inline-block;}
+  h1.title{font-family:var(--font-display); font-weight:600; font-size:clamp(26px,4vw,36px); margin:0 0 12px; letter-spacing:-0.01em;}
+  p.lede{font-size:15.5px; color:#C9CFDA; max-width:600px; margin:0;}
+  .back-link{display:inline-block; margin-top:20px; font-family:var(--font-data); font-size:12.5px; color:#C9CFDA; border-bottom:1px solid rgba(255,255,255,0.3); padding-bottom:2px;}
+  .back-link:hover{color:var(--amber); border-color:var(--amber);}
+
+  main{max-width:1040px; margin:0 auto; padding:44px 32px 70px;}
+  .intro{max-width:640px; font-size:15px; color:#3A4250; margin-bottom:36px;}
+
+  .grid{display:grid; grid-template-columns:1fr; gap:1px; background:var(--line); border:1px solid var(--line);}
+  @media (min-width:760px){ .grid{grid-template-columns:1fr;} }
+
+  .tool-card{
+    background:var(--paper);
+    display:grid;
+    grid-template-columns:220px 1fr;
+    gap:24px;
+    padding:22px;
+    transition:background 0.15s ease;
+  }
+  a.tool-card:hover{background:#FBFAF7;}
+  @media (max-width:640px){ .tool-card{grid-template-columns:1fr;} }
+
+  .thumb{
+    width:100%;
+    aspect-ratio:4/3;
+    border:1px solid var(--line);
+    background:linear-gradient(135deg, var(--navy) 0%, var(--navy-2) 100%);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    overflow:hidden;
+    position:relative;
+  }
+  .thumb img{width:100%; height:100%; object-fit:cover; object-position:top;}
+  .thumb .fallback{
+    color:#C9CFDA;
+    font-family:var(--font-data);
+    font-size:11px;
+    text-align:center;
+    padding:10px;
+  }
+  .thumb .fallback .dot{width:8px;height:8px;border-radius:50%;background:var(--amber);display:inline-block;margin-bottom:8px;}
+
+  .tool-body{display:flex; flex-direction:column;}
+  .tool-top{display:flex; justify-content:space-between; align-items:flex-start; gap:12px; margin-bottom:8px;}
+  .tool-title{font-family:var(--font-display); font-weight:600; font-size:18px; margin:0;}
+  .tool-status{font-family:var(--font-data); font-size:11px; padding:2px 8px; border:1px solid #F0DBAF; background:var(--amber-bg); color:var(--amber); white-space:nowrap; flex-shrink:0;}
+  .tool-desc{font-size:14px; color:#3A4250; margin:0 0 12px; flex-grow:1;}
+  .tool-meta{font-family:var(--font-data); font-size:11.5px; color:var(--steel); display:flex; gap:16px; flex-wrap:wrap;}
+  .tool-cta{font-family:var(--font-data); font-size:12.5px; color:var(--amber); margin-top:10px;}
+
+  footer{padding:30px 0 46px; font-size:12.5px; color:var(--steel); border-top:1px solid var(--line);}
+</style>
+</head>
+<body>
+
+<header class="hero">
+  <div class="wrap">
+    <p class="eyebrow"><span class="dot"></span>AVS — ATEX &amp; Verification Services</p>
+    <h1 class="title">Inspection Tools</h1>
+    <p class="lede">Three tools built to close specific gaps in day-to-day ATEX inspection work — each one replacing a manual Excel or export-and-email process with something live and explorable. Click any tool below to try it with anonymised sample data.</p>
+    <a class="back-link" href="https://tdraths.github.io/">← Back to tdraths.github.io</a>
+  </div>
+</header>
+
+<main>
+  <p class="intro">All three run entirely in your browser — nothing is sent anywhere. Sample data loads by default; each tool also accepts a real workbook upload if you want to see it populate from your own data (nothing you upload leaves your machine either).</p>
+
+  <div class="grid">
+
+    <a class="tool-card" href="system-tracker.html">
+      <div class="thumb">
+        <img src="assets/system-tracker.png" alt="System &amp; Asset Tracker screenshot"
+             onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+        <div class="fallback" style="display:none; flex-direction:column; align-items:center;">
+          <span class="dot"></span>Screenshot coming soon
+        </div>
+      </div>
+      <div class="tool-body">
+        <div class="tool-top">
+          <h2 class="tool-title">System &amp; Asset Tracker</h2>
+          <span class="tool-status">Live demo</span>
+        </div>
+        <p class="tool-desc">A live equipment register and non-conformance log — replaces two static Excel workbooks and their manual XLOOKUP/COUNTIFS formulas with a browsable, filterable tool.</p>
+        <div class="tool-meta"><span>HTML · JS · SheetJS</span></div>
+        <div class="tool-cta">Open tool →</div>
+      </div>
+    </a>
+
+    <a class="tool-card" href="fail-register.html">
+      <div class="thumb">
+        <img src="assets/fail-register.png" alt="Ex Fail Register screenshot"
+             onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+        <div class="fallback" style="display:none; flex-direction:column; align-items:center;">
+          <span class="dot"></span>Screenshot coming soon
+        </div>
+      </div>
+      <div class="tool-body">
+        <div class="tool-top">
+          <h2 class="tool-title">Ex Fail Register</h2>
+          <span class="tool-status">Live demo</span>
+        </div>
+        <p class="tool-desc">Browses and filters failed Ex inspections, reads each open comment into a resolution type, and sorts fails from easiest to hardest to close out.</p>
+        <div class="tool-meta"><span>HTML · JS · SheetJS</span></div>
+        <div class="tool-cta">Open tool →</div>
+      </div>
+    </a>
+
+    <a class="tool-card" href="inspection-digest.html">
+      <div class="thumb">
+        <img src="assets/inspection-digest.png" alt="Daily Inspection Digest screenshot"
+             onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+        <div class="fallback" style="display:none; flex-direction:column; align-items:center;">
+          <span class="dot"></span>Screenshot coming soon
+        </div>
+      </div>
+      <div class="tool-body">
+        <div class="tool-top">
+          <h2 class="tool-title">Daily Inspection Digest</h2>
+          <span class="tool-status">Live demo</span>
+        </div>
+        <p class="tool-desc">Turns a raw daily export into a plain-English summary — flags non-compliant items and drafts an email, ready to review and send.</p>
+        <div class="tool-meta"><span>HTML · JS</span></div>
+        <div class="tool-cta">Open tool →</div>
+      </div>
+    </a>
+
+  </div>
+</main>
+
+<footer>
+  <div class="wrap">Built with plain HTML, CSS and JS — hosted on GitHub Pages. Sample data is anonymised; no real client or system information appears anywhere in this repo.</div>
+</footer>
+
+</body>
+</html>

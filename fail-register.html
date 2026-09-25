@@ -1,0 +1,815 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Ex Fail Register</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+:root{
+  --bg:#20221F; --bg-2:#282B27; --panel:#2E322D; --panel-2:#363A34;
+  --line:#454A42; --line-soft:#3A3E37;
+  --text:#EDEEE6; --text-dim:#B4B9AC; --text-faint:#828878;
+  --amber:#D9A441; --green:#6FA97C; --blue:#6E93B8; --red:#C1584B; --grey:#8B9086;
+  font-family:'IBM Plex Sans',system-ui,sans-serif;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme: light){
+  :root:not([data-theme="dark"]){
+    --bg:#F2F1EA; --bg-2:#E9E8DF; --panel:#FFFFFF; --panel-2:#F5F4EE;
+    --line:#D8D6C9; --line-soft:#E3E1D4;
+    --text:#22241F; --text-dim:#565A4E; --text-faint:#8A8D7E;
+    --amber:#9C6E1F; --green:#3F7A4C; --blue:#3D6488; --red:#A23C2F; --grey:#6C7066;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#20221F; --bg-2:#282B27; --panel:#2E322D; --panel-2:#363A34; --line:#454A42; --line-soft:#3A3E37;
+  --text:#EDEEE6; --text-dim:#B4B9AC; --text-faint:#828878;
+}
+:root[data-theme="light"]{
+  --bg:#F2F1EA; --bg-2:#E9E8DF; --panel:#FFFFFF; --panel-2:#F5F4EE; --line:#D8D6C9; --line-soft:#E3E1D4;
+  --text:#22241F; --text-dim:#565A4E; --text-faint:#8A8D7E;
+  --amber:#9C6E1F; --green:#3F7A4C; --blue:#3D6488; --red:#A23C2F; --grey:#6C7066;
+}
+*{box-sizing:border-box;}
+html,body{margin:0;padding:0;background:var(--bg);color:var(--text);}
+body{font-size:14px;line-height:1.5;}
+::selection{background:var(--amber);color:#20221F;}
+.wrap{max-width:1180px;margin:0 auto;padding:28px 20px 80px;}
+
+header.top{
+  display:flex;flex-wrap:wrap;gap:20px;justify-content:space-between;align-items:flex-end;
+  padding-bottom:20px;margin-bottom:18px;border-bottom:1px solid var(--line);
+}
+.title-block h1{
+  font-family:'IBM Plex Mono',monospace; font-size:22px;font-weight:600;letter-spacing:-0.01em;margin:0 0 6px;
+  display:flex;align-items:center;gap:10px;
+}
+.title-block h1 .mark{width:10px;height:10px;background:var(--amber);clip-path:polygon(50% 0,100% 100%,0 100%);display:inline-block;flex:none;}
+.title-block p{margin:0;color:var(--text-dim);font-size:13px;max-width:56ch;}
+.hdr-right{display:flex;align-items:flex-end;gap:22px;flex-wrap:wrap;}
+.hdr-stats{display:flex;gap:22px;flex-wrap:wrap;}
+.hdr-stat{text-align:right;}
+.hdr-stat .n{font-family:'IBM Plex Mono',monospace;font-size:22px;font-weight:600;line-height:1;}
+.hdr-stat .l{font-size:11px;color:var(--text-faint);text-transform:uppercase;letter-spacing:.06em;margin-top:4px;}
+.btn{
+  border:1px solid var(--line);background:var(--panel);color:var(--text-dim);
+  font-size:12px;padding:8px 12px;border-radius:3px;cursor:pointer;font-family:'IBM Plex Mono',monospace;
+}
+.btn:hover{color:var(--text);border-color:var(--text-faint);}
+.btn.primary{border-color:var(--amber);color:var(--amber);}
+.btn.primary:hover{background:color-mix(in srgb, var(--amber) 12%, transparent);}
+.btn.small{padding:5px 9px;font-size:11px;}
+
+/* ---------- Upload bar ---------- */
+.upload-bar{
+  display:flex;align-items:center;gap:14px;flex-wrap:wrap;
+  border:1px dashed var(--line);background:var(--panel);border-radius:4px;
+  padding:12px 14px;margin-bottom:20px;
+}
+.upload-bar.drag{border-color:var(--amber);background:color-mix(in srgb, var(--amber) 8%, var(--panel));}
+.upload-bar .upload-icon{flex:none;color:var(--text-faint);}
+.upload-bar .upload-text{flex:1;min-width:200px;font-size:12.5px;color:var(--text-dim);}
+.upload-bar .upload-text b{color:var(--text);}
+.upload-bar .upload-text .src-file{font-family:'IBM Plex Mono',monospace;color:var(--text);}
+.upload-bar input[type=file]{display:none;}
+.upload-actions{display:flex;gap:8px;flex-wrap:wrap;}
+.upload-error{color:var(--red);font-size:12px;margin-top:8px;flex-basis:100%;}
+
+/* ---------- Controls ---------- */
+.controls{display:flex;flex-direction:column;gap:12px;margin-bottom:18px;}
+.row-1{display:flex;gap:10px;flex-wrap:wrap;}
+.search-box{flex:1 1 240px;position:relative;}
+.search-box input{
+  width:100%;background:var(--panel);border:1px solid var(--line);color:var(--text);
+  padding:9px 12px 9px 32px;border-radius:3px;font-size:13px;font-family:inherit;
+}
+.search-box input:focus{outline:none;border-color:var(--amber);}
+.search-box svg{position:absolute;left:10px;top:50%;transform:translateY(-50%);opacity:.5;pointer-events:none;}
+select{
+  background:var(--panel);border:1px solid var(--line);color:var(--text);
+  padding:9px 10px;border-radius:3px;font-size:13px;font-family:inherit;cursor:pointer;
+}
+select:focus{outline:none;border-color:var(--amber);}
+
+.chip-row{display:flex;gap:8px;flex-wrap:wrap;align-items:center;}
+.chip-group-label{font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--text-faint);margin-right:4px;}
+.chip{
+  display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line);background:var(--panel);color:var(--text-dim);
+  padding:6px 10px;border-radius:3px;font-size:12px;cursor:pointer;user-select:none;
+  transition:border-color .12s, color .12s, background .12s;
+}
+.chip .dot{width:7px;height:7px;border-radius:50%;flex:none;}
+.chip .count{color:var(--text-faint);font-family:'IBM Plex Mono',monospace;font-size:11px;}
+.chip.active{background:var(--panel-2);color:var(--text);border-color:var(--text-faint);}
+.chip:hover{border-color:var(--text-faint);}
+.chip.sev{font-family:'IBM Plex Mono',monospace;}
+.cat-paperwork .dot{background:var(--green);}
+.cat-info .dot{background:var(--amber);}
+.cat-physical .dot{background:var(--blue);}
+.cat-compliance .dot{background:var(--red);}
+.cat-other .dot{background:var(--grey);}
+.clear-link{font-size:12px;color:var(--text-faint);cursor:pointer;text-decoration:underline;text-underline-offset:2px;margin-left:auto;}
+.clear-link:hover{color:var(--text);}
+
+.result-line{font-size:12px;color:var(--text-faint);margin-bottom:14px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;}
+.result-line b{color:var(--text-dim);font-weight:600;}
+.hide-resolved-toggle{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--text-dim);cursor:pointer;user-select:none;}
+.hide-resolved-toggle input{accent-color:var(--amber);}
+
+/* ---------- Rows ---------- */
+.list{display:flex;flex-direction:column;gap:8px;}
+.card{border:1px solid var(--line);background:var(--panel);border-radius:3px;overflow:hidden;border-left-width:3px;}
+.card.fully-resolved{opacity:.55;}
+.card-head{display:flex;align-items:center;gap:14px;padding:12px 14px;cursor:pointer;}
+.card-head:hover{background:var(--panel-2);}
+.chev{flex:none;width:14px;height:14px;color:var(--text-faint);transition:transform .15s;}
+.card.open .chev{transform:rotate(90deg);}
+.card-main{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px;}
+.card-tag{font-family:'IBM Plex Mono',monospace;font-size:13px;font-weight:600;color:var(--text);}
+.card-tag .eq{font-family:'IBM Plex Sans',sans-serif;font-weight:400;color:var(--text-dim);margin-left:8px;}
+.card-sub{font-size:11.5px;color:var(--text-faint);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.card-badges{display:flex;align-items:center;gap:8px;flex:none;flex-wrap:nowrap;}
+.badge{font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:600;padding:3px 7px;border-radius:2px;border:1px solid transparent;line-height:1.4;}
+.badge-f2{color:var(--amber);border-color:var(--amber);background:color-mix(in srgb, var(--amber) 12%, transparent);}
+.badge-f3{color:var(--red);border-color:var(--red);background:color-mix(in srgb, var(--red) 14%, transparent);}
+.badge-done{color:var(--green);border-color:var(--green);background:color-mix(in srgb, var(--green) 12%, transparent);}
+.badge-progress{color:var(--text-dim);border-color:var(--line);}
+.badge-resolved{color:var(--green);border-color:var(--green);background:color-mix(in srgb, var(--green) 14%, transparent);}
+.effort-dots{display:flex;gap:3px;align-items:center;}
+.effort-dots .d{width:6px;height:6px;border-radius:50%;background:var(--line-soft);}
+.effort-dots .d.on{background:var(--amber);}
+.cat-dot-cluster{display:flex;gap:3px;}
+.cat-dot-cluster .dot{width:7px;height:7px;border-radius:50%;}
+
+.card-body{border-top:1px solid var(--line-soft);padding:0 14px 14px;display:none;}
+.card.open .card-body{display:block;}
+.meta-strip{display:flex;flex-wrap:wrap;gap:16px;padding:12px 0;font-size:11.5px;color:var(--text-faint);border-bottom:1px solid var(--line-soft);margin-bottom:12px;}
+.meta-strip span b{color:var(--text-dim);font-weight:500;}
+
+.comment{display:flex;gap:10px;padding:9px 0;border-bottom:1px dashed var(--line-soft);}
+.comment:last-child{border-bottom:none;}
+.comment.is-resolved{opacity:.5;}
+.comment .check{flex:none;margin-top:3px;}
+.comment .check input{width:15px;height:15px;accent-color:var(--green);cursor:pointer;}
+.comment .rail{flex:none;width:3px;border-radius:2px;margin-top:2px;align-self:stretch;}
+.comment-body{flex:1;min-width:0;}
+.comment-tags{display:flex;gap:6px;align-items:center;margin-bottom:4px;flex-wrap:wrap;}
+.tag-cat{font-size:10.5px;text-transform:uppercase;letter-spacing:.04em;font-weight:600;padding:2px 6px;border-radius:2px;}
+.tag-cat.cat-paperwork{color:var(--green);background:color-mix(in srgb, var(--green) 15%, transparent);}
+.tag-cat.cat-info{color:var(--amber);background:color-mix(in srgb, var(--amber) 15%, transparent);}
+.tag-cat.cat-physical{color:var(--blue);background:color-mix(in srgb, var(--blue) 15%, transparent);}
+.tag-cat.cat-compliance{color:var(--red);background:color-mix(in srgb, var(--red) 15%, transparent);}
+.tag-cat.cat-other{color:var(--grey);background:color-mix(in srgb, var(--grey) 15%, transparent);}
+.tag-sev{font-family:'IBM Plex Mono',monospace;font-size:10.5px;color:var(--text-faint);}
+.tag-refs{font-family:'IBM Plex Mono',monospace;font-size:10.5px;color:var(--text-faint);}
+.tag-source{font-size:10.5px;color:var(--text-faint);font-style:italic;}
+.comment-text{font-size:13px;color:var(--text);line-height:1.5;}
+.comment.is-resolved .comment-text{text-decoration:line-through;text-decoration-color:var(--text-faint);}
+.note-input{
+  margin-top:6px;width:100%;max-width:520px;background:var(--bg-2);border:1px solid var(--line-soft);
+  color:var(--text-dim);font-size:12px;padding:6px 8px;border-radius:3px;font-family:inherit;
+}
+.note-input:focus{outline:none;border-color:var(--amber);color:var(--text);}
+.no-open{color:var(--text-faint);font-size:12.5px;font-style:italic;padding:8px 0;}
+
+.empty-state{text-align:center;padding:60px 20px;color:var(--text-faint);}
+.empty-state .big{font-family:'IBM Plex Mono',monospace;font-size:15px;color:var(--text-dim);margin-bottom:6px;}
+
+footer{margin-top:36px;padding-top:18px;border-top:1px solid var(--line);font-size:11.5px;color:var(--text-faint);}
+footer p{margin:0 0 6px;max-width:76ch;}
+
+/* ---------- Report modal ---------- */
+.modal-backdrop{
+  position:fixed;inset:0;background:rgba(0,0,0,.55);display:none;align-items:flex-start;justify-content:center;
+  padding:40px 16px;z-index:50;overflow-y:auto;
+}
+.modal-backdrop.show{display:flex;}
+.modal{
+  background:var(--panel);border:1px solid var(--line);border-radius:5px;max-width:720px;width:100%;
+  padding:20px;
+}
+.modal h2{font-family:'IBM Plex Mono',monospace;font-size:16px;margin:0 0 6px;}
+.modal p.sub{color:var(--text-faint);font-size:12.5px;margin:0 0 14px;}
+.modal textarea{
+  width:100%;height:340px;background:var(--bg-2);color:var(--text);border:1px solid var(--line-soft);
+  border-radius:3px;padding:10px;font-family:'IBM Plex Mono',monospace;font-size:12px;line-height:1.5;resize:vertical;
+}
+.modal-actions{display:flex;gap:8px;margin-top:12px;justify-content:flex-end;}
+
+@media (max-width:640px){
+  .card-sub{white-space:normal;}
+  .hdr-stats{gap:14px;}
+  .card-head{flex-wrap:wrap;}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="top">
+    <div class="title-block">
+      <h1><span class="mark"></span>Ex Fail Register</h1>
+      <p>Open Comments across every F2/F3 fail — grouped, tagged, and sorted so the quick wins don't hide behind the hard ones.</p>
+    </div>
+    <div class="hdr-right">
+      <div class="hdr-stats" id="hdrStats"></div>
+      <button class="btn" id="themeToggle" type="button">Dark / Light</button>
+      <button class="btn primary" id="reportBtn" type="button">Generate report</button>
+    </div>
+  </header>
+
+  <div class="upload-bar" id="uploadBar">
+    <svg class="upload-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+    <div class="upload-text" id="uploadText">Loading…</div>
+    <div class="upload-actions">
+      <button class="btn small" id="uploadBtn" type="button">Upload workbook…</button>
+      <button class="btn small" id="resetBtn" type="button">Reset tracking</button>
+    </div>
+    <input type="file" id="fileInput" accept=".xlsx,.xls,.xlsm">
+  </div>
+
+  <div class="controls">
+    <div class="row-1">
+      <div class="search-box">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        <input id="search" type="text" placeholder="Search tag no, equipment, manufacturer, or comment text…">
+      </div>
+      <select id="clientFilter"><option value="">All clients</option></select>
+      <select id="areaFilter"><option value="">All areas</option></select>
+      <select id="progressFilter">
+        <option value="">Any progress</option>
+        <option value="In Progress">In Progress</option>
+        <option value="Done">Done</option>
+      </select>
+      <select id="sortBy">
+        <option value="hardest">Hardest to resolve first</option>
+        <option value="easiest">Easiest to resolve first</option>
+        <option value="tag">Tag No. (A–Z)</option>
+        <option value="area">Plant area</option>
+        <option value="items">Most open items</option>
+      </select>
+    </div>
+    <div class="chip-row" id="catChips"><span class="chip-group-label">Resolution type</span></div>
+    <div class="chip-row" id="sevChips"><span class="chip-group-label">Severity</span></div>
+  </div>
+
+  <div class="result-line">
+    <span id="resultLine"></span>
+    <label class="hide-resolved-toggle"><input type="checkbox" id="hideResolved">Hide items I've marked resolved</label>
+  </div>
+
+  <div class="list" id="list"></div>
+  <div class="empty-state" id="emptyState" style="display:none;">
+    <div class="big">No fails match those filters</div>
+    <div>Try clearing the search or a filter above.</div>
+  </div>
+
+  <footer>
+    <p><b style="color:var(--text-dim)">How "resolution type" is worked out:</b> each Open Comment is read against a set of keyword rules — “outstanding / required” documentation reads as <i>Chase paperwork</i>, “pending / to determine suitability” reads as <i>Info / review needed</i>, “to be installed / missing / cut” reads as <i>Physical work</i>, and nameplate or CE-marking mismatches read as <i>Compliance</i>. It's a heuristic reading of the wording AVS logged, not a judgment call by AVS or Anthropic — check the underlying comment before treating a categorisation as final.</p>
+    <p><b style="color:var(--text-dim)">Uploads and tracking:</b> uploading a workbook replaces the data below and is saved only in this browser, on this device — nothing is sent anywhere. Ticking an item as resolved is tracked the same way, matched to that exact comment line, so re-uploading a fresh export keeps your progress as long as the wording hasn't changed.</p>
+  </footer>
+
+</div>
+
+<div class="modal-backdrop" id="reportBackdrop">
+  <div class="modal">
+    <h2>Work list</h2>
+    <p class="sub">Plain text of every unresolved open item currently matching your filters — grouped by fail. Select all and copy into an email or message.</p>
+    <textarea id="reportText" readonly></textarea>
+    <div class="modal-actions">
+      <button class="btn small" id="reportSelectAll" type="button">Select all text</button>
+      <button class="btn small" id="reportClose" type="button">Close</button>
+    </div>
+  </div>
+</div>
+
+<script id="register-data" type="application/json">{"rows": [{"doc_no": "DOC-1001", "job_no": "J-4471", "client": "Demo Client Facility", "tag_no": "TAG-101-1004", "area": "Building 3 \u2014 Process Area A", "location": "Level 1", "equipment": "Solenoid Valve", "manufacturer": "Fictive Controls", "model": "FC-200X", "serial_no": "SN-88213", "category": "Group II Cat 2", "overall": "F2", "progress": "In Progress", "inspection_type": "Periodic", "inspected_by": "J. Byrne", "completed": "2026-07-02", "next_due": "2027-07-02", "row_id": 0, "comments": [{"source": "repair", "refs": ["4"], "severity": "F2", "text": "Cable gland is missing shroud, to be installed.", "category": "physical", "raw": "Qs 4: (F2) Cable gland is missing shroud, to be installed."}], "open_count": 1, "effort_score": 2, "categories": ["physical"], "max_effort_cat": "physical"}, {"doc_no": "DOC-1002", "job_no": "J-4471", "client": "Demo Client Facility", "tag_no": "TAG-102-1002", "area": "Building 3 \u2014 Process Area A", "location": "Level 1", "equipment": "Junction Box", "manufacturer": "Fictive Controls", "model": "FC-JB40", "serial_no": "SN-88214", "category": "Group II Cat 2", "overall": "F3", "progress": "In Progress", "inspection_type": "Periodic", "inspected_by": "J. Byrne", "completed": "2026-07-02", "next_due": "2027-07-02", "row_id": 1, "comments": [{"source": "doc_p1", "refs": ["2"], "severity": null, "text": "Declaration of Conformity outstanding for this unit.", "category": "paperwork", "raw": "Qs 2: Declaration of Conformity outstanding for this unit."}, {"source": "doc_p2", "refs": ["3"], "severity": null, "text": "Technical data outstanding.", "category": "paperwork", "raw": "Qs 3: Technical data outstanding."}], "open_count": 2, "effort_score": 2, "categories": ["paperwork"], "max_effort_cat": "paperwork"}, {"doc_no": "DOC-1003", "job_no": "J-4471", "client": "Demo Client Facility", "tag_no": "TAG-201-1011", "area": "Building 4 \u2014 Process Area B", "location": "Level 2", "equipment": "Motor", "manufacturer": "Ferrowatt", "model": "FW-11kW", "serial_no": "SN-77102", "category": "Group II Cat 2", "overall": "F2", "progress": "Done", "inspection_type": "Periodic", "inspected_by": "S. Malone", "completed": "2026-05-14", "next_due": "2027-05-14", "row_id": 2, "comments": [{"source": "avd", "refs": ["1"], "severity": null, "text": "Nameplate marking does not comply \u2014 ambient temperature range i.e. -20C to +40C not stated.", "category": "compliance", "raw": "Qs 1: Nameplate marking does not comply \u2014 ambient temperature range i.e. -20C to +40C not stated."}], "open_count": 1, "effort_score": 3, "categories": ["compliance"], "max_effort_cat": "compliance"}, {"doc_no": "DOC-1004", "job_no": "J-4471", "client": "Demo Client Facility", "tag_no": "TAG-201-1015", "area": "Building 4 \u2014 Process Area B", "location": "Level 2", "equipment": "Pressure Transmitter", "manufacturer": "Sencora", "model": "SC-PT100", "serial_no": "SN-77118", "category": "Group II Cat 1", "overall": "F2", "progress": "In Progress", "inspection_type": "Periodic", "inspected_by": "S. Malone", "completed": "2026-05-14", "next_due": "2027-05-14", "row_id": 3, "comments": [{"source": "repair", "refs": ["5", "6"], "severity": "F2", "text": "Bond earth is cut, to be reinstated.", "category": "physical", "raw": "Qs 5,6: (F2) Bond earth is cut, to be reinstated."}, {"source": "repair", "refs": ["7"], "severity": "F2", "text": "Pipework installation incomplete.", "category": "physical", "raw": "Qs 7: (F2) Pipework installation incomplete."}], "open_count": 2, "effort_score": 4, "categories": ["physical"], "max_effort_cat": "physical"}, {"doc_no": "DOC-1005", "job_no": "J-4471", "client": "Demo Client Facility", "tag_no": "TAG-202-1006", "area": "Building 4 \u2014 Process Area B", "location": "Level 1", "equipment": "Isolator", "manufacturer": "Ferrowatt", "model": "FW-ISO25", "serial_no": "SN-77140", "category": "Group II Cat 2", "overall": "F3", "progress": "In Progress", "inspection_type": "Periodic", "inspected_by": "S. Malone", "completed": "2026-06-01", "next_due": "2027-06-01", "row_id": 4, "comments": [{"source": "doc_p2", "refs": ["2"], "severity": null, "text": "Technical data & Declaration of Conformity outstanding.", "category": "paperwork", "raw": "Qs 2: Technical data & Declaration of Conformity outstanding."}, {"source": "avd", "refs": ["3"], "severity": null, "text": "CE marking is unsuitable (Fail) for the zone classification.", "category": "compliance", "raw": "Qs 3: CE marking is unsuitable (Fail) for the zone classification."}], "open_count": 2, "effort_score": 4, "categories": ["compliance", "paperwork"], "max_effort_cat": "compliance"}, {"doc_no": "DOC-1006", "job_no": "J-4478", "client": "Demo Client Facility", "tag_no": "TAG-301-1002", "area": "Solvent Store", "location": "Ground", "equipment": "Level Sensor", "manufacturer": "Sencora", "model": "SC-LS50", "serial_no": "SN-91004", "category": "Group II Cat 1", "overall": "F2", "progress": "Done", "inspection_type": "Periodic", "inspected_by": "J. Byrne", "completed": "2026-04-09", "next_due": "2027-04-09", "row_id": 5, "comments": [{"source": "doc_p1", "refs": ["1"], "severity": null, "text": "Status is 'Pending' \u2014 technical review is required from the manufacturer.", "category": "info", "raw": "Qs 1: Status is 'Pending' \u2014 technical review is required from the manufacturer."}], "open_count": 1, "effort_score": 2, "categories": ["info"], "max_effort_cat": "info"}, {"doc_no": "DOC-1007", "job_no": "J-4478", "client": "Demo Client Facility", "tag_no": "TAG-301-1009", "area": "Solvent Store", "location": "Ground", "equipment": "Cable Gland", "manufacturer": "Fictive Controls", "model": "FC-CG20", "serial_no": "SN-91021", "category": "Group II Cat 1", "overall": "F2", "progress": "Done", "inspection_type": "Periodic", "inspected_by": "J. Byrne", "completed": "2026-04-09", "next_due": "2027-04-09", "row_id": 6, "comments": [{"source": "repair", "refs": ["1"], "severity": "F2", "text": "Cable entry is unused, blanking plug to be installed.", "category": "physical", "raw": "Qs 1: (F2) Cable entry is unused, blanking plug to be installed."}, {"source": "closed", "refs": [], "severity": null, "text": "Blanking plug fitted and verified on follow-up visit.", "category": "physical", "raw": "Blanking plug fitted and verified on follow-up visit."}], "open_count": 1, "effort_score": 2, "categories": ["physical"], "max_effort_cat": "physical"}, {"doc_no": "DOC-1008", "job_no": "J-4481", "client": "Demo Client Facility", "tag_no": "TAG-401-1003", "area": "Drum Store", "location": "Ground", "equipment": "Lighting Fitting", "manufacturer": "Ferrowatt", "model": "FW-LT18", "serial_no": "SN-65210", "category": "Group II Cat 2", "overall": "F2", "progress": "In Progress", "inspection_type": "Periodic", "inspected_by": "S. Malone", "completed": "2026-08-02", "next_due": "2027-08-02", "row_id": 7, "comments": [{"source": "repair", "refs": ["2"], "severity": "F2", "text": "Label missing from enclosure, to be installed.", "category": "physical", "raw": "Qs 2: (F2) Label missing from enclosure, to be installed."}], "open_count": 1, "effort_score": 2, "categories": ["physical"], "max_effort_cat": "physical"}, {"doc_no": "DOC-1009", "job_no": "J-4481", "client": "Demo Client Facility", "tag_no": "TAG-401-1006", "area": "Drum Store", "location": "Ground", "equipment": "Motor", "manufacturer": "Ferrowatt", "model": "FW-7kW", "serial_no": "SN-65233", "category": "Group II Cat 2", "overall": "F3", "progress": "In Progress", "inspection_type": "Periodic", "inspected_by": "S. Malone", "completed": "2026-08-02", "next_due": "2027-08-02", "row_id": 8, "comments": [{"source": "doc_p2", "refs": ["4"], "severity": null, "text": "Document / memo is required confirming repair scope, confirmation required from site engineer.", "category": "paperwork", "raw": "Qs 4: Document / memo is required confirming repair scope, confirmation required from site engineer."}], "open_count": 1, "effort_score": 1, "categories": ["paperwork"], "max_effort_cat": "paperwork"}, {"doc_no": "DOC-1010", "job_no": "J-4490", "client": "Demo Client Facility", "tag_no": "TAG-501-1002", "area": "Loading Bay", "location": "Ground", "equipment": "Junction Box", "manufacturer": "Fictive Controls", "model": "FC-JB25", "serial_no": "SN-52011", "category": "Group II Cat 2", "overall": "F2", "progress": "Done", "inspection_type": "Periodic", "inspected_by": "J. Byrne", "completed": "2026-03-20", "next_due": "2027-03-20", "row_id": 9, "comments": [{"source": "closed", "refs": [], "severity": null, "text": "Nameplate replaced and re-verified \u2014 closed 2026-03-28.", "category": "other", "raw": "Nameplate replaced and re-verified \u2014 closed 2026-03-28."}], "open_count": 0, "effort_score": 0, "categories": [], "max_effort_cat": null}, {"doc_no": "DOC-1011", "job_no": "J-4490", "client": "Demo Client Facility", "tag_no": "TAG-601-1004", "area": "Utility Corridor", "location": "Ground", "equipment": "Distribution Board", "manufacturer": "Sencora", "model": "SC-DB12", "serial_no": "SN-40881", "category": "Group II Cat 2", "overall": "F2", "progress": "In Progress", "inspection_type": "Periodic", "inspected_by": "J. Byrne", "completed": "2026-07-15", "next_due": "2027-07-15", "row_id": 10, "comments": [{"source": "repair", "refs": ["3"], "severity": "F2", "text": "Unauthorised cable entry identified, to be made good.", "category": "physical", "raw": "Qs 3: (F2) Unauthorised cable entry identified, to be made good."}], "open_count": 1, "effort_score": 2, "categories": ["physical"], "max_effort_cat": "physical"}, {"doc_no": "DOC-1012", "job_no": "J-4490", "client": "Demo Client Facility", "tag_no": "TAG-601-1007", "area": "Utility Corridor", "location": "Ground", "equipment": "Control Panel", "manufacturer": "Ferrowatt", "model": "FW-CP30", "serial_no": "SN-40902", "category": "Group II Cat 2", "overall": "F2", "progress": "In Progress", "inspection_type": "Periodic", "inspected_by": "J. Byrne", "completed": "2026-07-15", "next_due": "2027-07-15", "row_id": 11, "comments": [{"source": "repair", "refs": ["1"], "severity": "F2", "text": "Enclosure gasket damaged, to be replaced.", "category": "physical", "raw": "Qs 1: (F2) Enclosure gasket damaged, to be replaced."}, {"source": "doc_p1", "refs": ["2"], "severity": null, "text": "Technical data outstanding for replacement gasket kit.", "category": "paperwork", "raw": "Qs 2: Technical data outstanding for replacement gasket kit."}], "open_count": 2, "effort_score": 3, "categories": ["paperwork", "physical"], "max_effort_cat": "physical"}], "category_meta": {"paperwork": {"label": "Chase paperwork", "effort": 1, "desc": "An existing document (DoC, tech data) needs to be obtained."}, "info": {"label": "Info / review needed", "effort": 2, "desc": "Suitability can\u2019t be confirmed until data or a technical review is supplied."}, "physical": {"label": "Physical work", "effort": 2, "desc": "Something needs to be installed, fixed, or physically completed on site."}, "compliance": {"label": "Compliance / nameplate", "effort": 3, "desc": "Nameplate marking or certification doesn\u2019t comply \u2014 usually needs manufacturer or engineering input."}, "other": {"label": "Other", "effort": 2, "desc": "Doesn\u2019t match a known pattern \u2014 read the note."}}}</script>
+<script>
+(function(){
+
+const EMBEDDED = JSON.parse(document.getElementById('register-data').textContent);
+const CAT_META = EMBEDDED.category_meta;
+const CAT_ORDER = ['paperwork','info','physical','compliance','other'];
+const CAT_COLOR = {paperwork:'green', info:'amber', physical:'blue', compliance:'red', other:'grey'};
+
+const LS_DATA_KEY = 'exFailRegister:data:v1';
+const LS_META_KEY = 'exFailRegister:meta:v1';
+const LS_RESOLVED_KEY = 'exFailRegister:resolved:v1';
+
+let ROWS = [];
+let SOURCE_META = { filename: null, uploadedAt: null, rowCount: 0, builtIn: true };
+let RESOLVED = {}; // itemKey -> {resolved:bool, note:string}
+
+// ---------------- storage helpers ----------------
+function lsGet(key){
+  try{ const v = localStorage.getItem(key); return v ? JSON.parse(v) : null; }
+  catch(e){ return null; }
+}
+function lsSet(key, val){
+  try{ localStorage.setItem(key, JSON.stringify(val)); return true; }
+  catch(e){ return false; }
+}
+
+function loadInitial(){
+  const savedData = lsGet(LS_DATA_KEY);
+  const savedMeta = lsGet(LS_META_KEY);
+  if(savedData && Array.isArray(savedData.rows) && savedData.rows.length){
+    ROWS = savedData.rows;
+    SOURCE_META = savedMeta || { filename:'(previous upload)', uploadedAt:null, rowCount: ROWS.length, builtIn:false };
+  } else {
+    ROWS = EMBEDDED.rows;
+    SOURCE_META = { filename:'_Ex_Form_Register.xlsx (built-in sample)', uploadedAt:null, rowCount: ROWS.length, builtIn:true };
+  }
+  RESOLVED = lsGet(LS_RESOLVED_KEY) || {};
+}
+
+// ---------------- classification (mirrors the original Python extraction) ----------------
+const PHYSICAL_KW = ['to be installed','install incomplete','is missing','missing from','label missing','is cut','is unused','hinge pin','bond earth','pipework install','airline','pneumatic supply'];
+const COMPLIANCE_KW = ['does not comply','nameplate marking','ce marking','protection markings are missing','ambient temperature range i.e','nameplate does not comply','unsuitable (fail)','category ii'];
+const PAPERWORK_KW = ['declaration of conformity outstanding','technical data outstanding','technical data & declaration of conformity outstanding','not available in english','document / memo is required','confirmation required','doc ref',"d.o.c."];
+const INFO_KW = ['required to determine',"status is 'pending'",'status is \u2018pending\u2019','status pending','required from the manufacturer','technical review is required','cannot be verified','not available for review'];
+
+function classify(text){
+  const t = text.toLowerCase();
+  if(COMPLIANCE_KW.some(k=>t.includes(k))) return 'compliance';
+  if(PHYSICAL_KW.some(k=>t.includes(k))) return 'physical';
+  if(PAPERWORK_KW.some(k=>t.includes(k))) return 'paperwork';
+  if(INFO_KW.some(k=>t.includes(k))) return 'info';
+  return 'other';
+}
+
+const QS_RE = /^(Qs\s+([A-Za-z0-9,\s]+?)|General)\s*:\s*(\(F\d\))?\s*(.*)$/i;
+const SEV_RE = /\(F(\d)\)/;
+
+function parseLine(raw, source){
+  const line = (raw||'').trim();
+  if(!line) return null;
+  const m = QS_RE.exec(line);
+  let refs = [];
+  let body = line;
+  if(m){
+    const qsPart = m[2];
+    if(qsPart) refs = qsPart.split(',').map(s=>s.trim()).filter(Boolean);
+    body = (m[4]||'').trim();
+  }
+  const sevM = SEV_RE.exec(line);
+  const severity = sevM ? ('F'+sevM[1]) : null;
+  let bodyClean = body.replace(SEV_RE, '').trim();
+  bodyClean = bodyClean.replace(/^\(F\d\)\s*/, '').trim();
+  const cat = classify(line);
+  return { source, refs, severity, text: bodyClean || line, category: cat, raw: line };
+}
+
+const ID_COLS = {
+  doc_no:'Document No.', job_no:'AVS Job No.', client:'Client', tag_no:'Tag No. / Item No.',
+  area:'Building / Plant Area', location:'Level / Location', equipment:'Equipment Description',
+  manufacturer:'Manufacturer', model:'Type / Model', serial_no:'Serial No.', category:'Category',
+  overall:'Overall Pass/Fail', progress:'Progress', inspection_type:'Inspection Type',
+  inspected_by:'Inspection Completed By', completed:'Inspection Completed', next_due:'Next Inspection Due'
+};
+const COMMENT_COLS = {
+  'Comments Repair (Open)':'repair', 'Comments Doc P1 (Open)':'doc_p1', 'Comments Doc P2 (Open)':'doc_p2',
+  'Comments AVD':'avd', 'Comments (Closed)':'closed'
+};
+
+function cleanVal(v){
+  if(v === null || v === undefined) return null;
+  if(v instanceof Date){
+    const y=v.getFullYear(), mo=String(v.getMonth()+1).padStart(2,'0'), d=String(v.getDate()).padStart(2,'0');
+    return `${y}-${mo}-${d}`;
+  }
+  const s = String(v).trim();
+  return s === '' ? null : s;
+}
+
+function parseWorkbookToRows(workbook){
+  // pick the sheet whose header row contains "Overall Pass/Fail"; else first sheet
+  let sheetName = workbook.SheetNames[0];
+  for(const name of workbook.SheetNames){
+    const ws = workbook.Sheets[name];
+    const json = XLSX.utils.sheet_to_json(ws, { header:1, range:0, defval:null });
+    if(json.length && json[0] && json[0].includes('Overall Pass/Fail')){ sheetName = name; break; }
+  }
+  const ws = workbook.Sheets[sheetName];
+  const records = XLSX.utils.sheet_to_json(ws, { defval:null, raw:false, dateNF:'yyyy-mm-dd' });
+
+  const missing = Object.values(ID_COLS).filter(col => !(col in (records[0]||{})) );
+  if(records.length === 0 || missing.length > Object.values(ID_COLS).length - 6){
+    throw new Error('This doesn\'t look like the Ex fail register export — expected columns like "Overall Pass/Fail" and "Tag No. / Item No." weren\'t found.');
+  }
+
+  const rows = records.map((rec, idx) => {
+    const out = {};
+    for(const [key, col] of Object.entries(ID_COLS)) out[key] = cleanVal(rec[col]);
+    out.row_id = idx;
+    const comments = [];
+    for(const [col, key] of Object.entries(COMMENT_COLS)){
+      const val = rec[col];
+      if(val === null || val === undefined || String(val).trim()==='') continue;
+      String(val).split('\n').forEach(ln=>{
+        const parsed = parseLine(ln, key);
+        if(parsed) comments.push(parsed);
+      });
+    }
+    out.comments = comments;
+    const openComments = comments.filter(c=>c.source!=='closed');
+    out.open_count = openComments.length;
+    if(openComments.length){
+      out.effort_score = openComments.reduce((a,c)=>a+CAT_META[c.category].effort,0);
+      out.categories = [...new Set(openComments.map(c=>c.category))].sort();
+      out.max_effort_cat = openComments.slice().sort((a,b)=>CAT_META[b.category].effort-CAT_META[a.category].effort)[0].category;
+    } else {
+      out.effort_score = 0; out.categories = []; out.max_effort_cat = null;
+    }
+    return out;
+  });
+  return rows;
+}
+
+// stable-ish key for a single comment item, used for resolve tracking across re-uploads
+function itemKey(row, c){
+  return [row.doc_no, row.tag_no, c.source, c.raw].join('::');
+}
+
+// ---------------- UI state ----------------
+const state = { cats:new Set(), sevs:new Set(), search:'', client:'', area:'', progress:'', sort:'hardest', openRows:new Set(), hideResolved:false };
+
+function isRowFullyResolved(r){
+  const open = r.comments.filter(c=>c.source!=='closed');
+  if(!open.length) return false;
+  return open.every(c => RESOLVED[itemKey(r,c)] && RESOLVED[itemKey(r,c)].resolved);
+}
+
+// ---------------- building filter controls from current ROWS ----------------
+function uniqueSorted(key){ return [...new Set(ROWS.map(r=>r[key]).filter(Boolean))].sort(); }
+
+function fillSelect(sel, values, currentVal){
+  sel.innerHTML = sel === document.getElementById('progressFilter')
+    ? '<option value="">Any progress</option><option value="In Progress">In Progress</option><option value="Done">Done</option>'
+    : `<option value="">${sel.id==='clientFilter' ? 'All clients' : 'All areas'}</option>`;
+  values.forEach(v=>{
+    const o = document.createElement('option'); o.value=v; o.textContent=v; sel.appendChild(o);
+  });
+  if(currentVal && values.includes(currentVal)) sel.value = currentVal;
+}
+
+function rebuildFilterUI(){
+  fillSelect(document.getElementById('clientFilter'), uniqueSorted('client'), state.client);
+  fillSelect(document.getElementById('areaFilter'), uniqueSorted('area'), state.area);
+
+  const catCounts = {}, sevCounts = {};
+  ROWS.forEach(r=>r.comments.forEach(c=>{
+    if(c.source==='closed') return;
+    catCounts[c.category] = (catCounts[c.category]||0)+1;
+    if(c.severity) sevCounts[c.severity] = (sevCounts[c.severity]||0)+1;
+  }));
+
+  const catWrap = document.getElementById('catChips');
+  catWrap.innerHTML = '<span class="chip-group-label">Resolution type</span>';
+  CAT_ORDER.filter(c=>catCounts[c]).forEach(cat=>{
+    const meta = CAT_META[cat];
+    const el = document.createElement('div');
+    el.className = `chip cat-${cat}` + (state.cats.has(cat) ? ' active' : '');
+    el.innerHTML = `<span class="dot"></span>${meta.label} <span class="count">${catCounts[cat]}</span>`;
+    el.title = meta.desc;
+    el.addEventListener('click', ()=>{
+      if(state.cats.has(cat)) state.cats.delete(cat); else state.cats.add(cat);
+      el.classList.toggle('active');
+      render();
+    });
+    catWrap.appendChild(el);
+  });
+
+  const sevWrap = document.getElementById('sevChips');
+  sevWrap.innerHTML = '<span class="chip-group-label">Severity</span>';
+  Object.keys(sevCounts).sort().forEach(sev=>{
+    const el = document.createElement('div');
+    el.className = 'chip sev' + (state.sevs.has(sev) ? ' active' : '');
+    el.innerHTML = `${sev} <span class="count">${sevCounts[sev]}</span>`;
+    el.addEventListener('click', ()=>{
+      if(state.sevs.has(sev)) state.sevs.delete(sev); else state.sevs.add(sev);
+      el.classList.toggle('active');
+      render();
+    });
+    sevWrap.appendChild(el);
+  });
+  const clearLink = document.createElement('span');
+  clearLink.className = 'clear-link';
+  clearLink.textContent = 'Clear filters';
+  clearLink.addEventListener('click', ()=>{
+    state.cats.clear(); state.sevs.clear(); state.search=''; state.client=''; state.area=''; state.progress='';
+    document.getElementById('search').value='';
+    document.getElementById('clientFilter').value='';
+    document.getElementById('areaFilter').value='';
+    document.getElementById('progressFilter').value='';
+    rebuildFilterUI();
+    render();
+  });
+  sevWrap.appendChild(clearLink);
+}
+
+function refreshHeaderStats(){
+  const totalRows = ROWS.length;
+  const totalOpen = ROWS.reduce((a,r)=>a+r.open_count,0);
+  const rowsWithOpen = ROWS.filter(r=>r.open_count>0).length;
+  let resolvedCount = 0;
+  ROWS.forEach(r=>r.comments.forEach(c=>{ if(c.source!=='closed' && RESOLVED[itemKey(r,c)] && RESOLVED[itemKey(r,c)].resolved) resolvedCount++; }));
+  document.getElementById('hdrStats').innerHTML = `
+    <div class="hdr-stat"><div class="n">${totalRows}</div><div class="l">Total fails</div></div>
+    <div class="hdr-stat"><div class="n">${totalOpen}</div><div class="l">Open items</div></div>
+    <div class="hdr-stat"><div class="n">${resolvedCount}</div><div class="l">Marked resolved</div></div>
+  `;
+}
+
+function refreshUploadBar(){
+  const t = document.getElementById('uploadText');
+  if(SOURCE_META.builtIn){
+    t.innerHTML = `Using the <b>built-in sample</b> (${SOURCE_META.rowCount} fails). Upload your own export to replace it.`;
+  } else {
+    const when = SOURCE_META.uploadedAt ? new Date(SOURCE_META.uploadedAt).toLocaleString() : 'earlier';
+    t.innerHTML = `Using <span class="src-file">${escapeHtml(SOURCE_META.filename||'uploaded file')}</span> — ${SOURCE_META.rowCount} fails, uploaded ${when}. Saved on this device only.`;
+  }
+}
+
+// ---------------- filtering / sorting ----------------
+function rowMatches(r){
+  if(state.client && r.client !== state.client) return false;
+  if(state.area && r.area !== state.area) return false;
+  if(state.progress && r.progress !== state.progress) return false;
+  if(state.cats.size && !r.categories.some(c=>state.cats.has(c))) return false;
+  if(state.sevs.size){
+    const sevs = new Set(r.comments.filter(c=>c.source!=='closed').map(c=>c.severity));
+    let hit=false; state.sevs.forEach(s=>{ if(sevs.has(s)) hit=true; });
+    if(!hit) return false;
+  }
+  if(state.hideResolved && isRowFullyResolved(r)) return false;
+  if(state.search){
+    const hay = [r.tag_no, r.equipment, r.manufacturer, r.model, r.doc_no, r.area]
+      .concat(r.comments.map(c=>c.text)).filter(Boolean).join(' ').toLowerCase();
+    if(!hay.includes(state.search)) return false;
+  }
+  return true;
+}
+
+function sortRows(rows){
+  const arr = rows.slice();
+  switch(state.sort){
+    case 'hardest': arr.sort((a,b)=> b.effort_score - a.effort_score || b.open_count - a.open_count); break;
+    case 'easiest': arr.sort((a,b)=>{
+        const aHas = a.open_count>0, bHas = b.open_count>0;
+        if(aHas !== bHas) return bHas - aHas;
+        return a.effort_score - b.effort_score || a.open_count - b.open_count;
+      }); break;
+    case 'tag': arr.sort((a,b)=> (a.tag_no||'').localeCompare(b.tag_no||'')); break;
+    case 'area': arr.sort((a,b)=> (a.area||'').localeCompare(b.area||'') || (a.tag_no||'').localeCompare(b.tag_no||'')); break;
+    case 'items': arr.sort((a,b)=> b.open_count - a.open_count); break;
+  }
+  return arr;
+}
+
+function effortDots(score){
+  const filled = Math.min(5, score);
+  let html = '<div class="effort-dots" title="Resolution effort score: '+score+'">';
+  for(let i=0;i<5;i++){ html += `<div class="d${i<filled?' on':''}"></div>`; }
+  html += '</div>';
+  return html;
+}
+function catDots(cats){
+  return `<div class="cat-dot-cluster">${cats.map(c=>`<div class="dot" style="background:var(--${CAT_COLOR[c]})" title="${CAT_META[c].label}"></div>`).join('')}</div>`;
+}
+function escapeHtml(s){ return (s||'').replace(/[&<>"']/g, m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])); }
+
+function toggleResolved(row, c, checked){
+  const key = itemKey(row, c);
+  const existing = RESOLVED[key] || {};
+  RESOLVED[key] = { resolved: checked, note: existing.note || '' };
+  lsSet(LS_RESOLVED_KEY, RESOLVED);
+}
+function setNote(row, c, note){
+  const key = itemKey(row, c);
+  const existing = RESOLVED[key] || {resolved:false};
+  RESOLVED[key] = { resolved: existing.resolved, note };
+  lsSet(LS_RESOLVED_KEY, RESOLVED);
+}
+
+function renderCard(r){
+  const isOpen = state.openRows.has(r.row_id);
+  const maxCat = r.max_effort_cat;
+  const borderColor = maxCat ? `var(--${CAT_COLOR[maxCat]})` : 'var(--line)';
+  const overallBadge = r.overall ? `<span class="badge badge-${r.overall.toLowerCase()}">${r.overall}</span>` : '';
+  const progressBadge = r.progress ? `<span class="badge badge-progress">${r.progress}</span>` : '';
+  const fullyResolved = isRowFullyResolved(r);
+
+  const openComments = r.comments.filter(c=>c.source!=='closed');
+  const closedComments = r.comments.filter(c=>c.source==='closed');
+
+  const commentsHtml = openComments.length ? openComments.map((c,ci)=>{
+    const color = CAT_COLOR[c.category];
+    const refs = c.refs && c.refs.length ? `Qs ${c.refs.join(', ')}` : '';
+    const sourceLabel = ({repair:'Repair (Open)', doc_p1:'Doc P1 (Open)', doc_p2:'Doc P2 (Open)', avd:'AVD'})[c.source] || c.source;
+    const key = itemKey(r, c);
+    const st = RESOLVED[key] || { resolved:false, note:'' };
+    return `<div class="comment${st.resolved ? ' is-resolved':''}" data-key="${escapeHtml(key)}">
+      <div class="check"><input type="checkbox" ${st.resolved?'checked':''} data-row="${r.row_id}" data-ci="${ci}"></div>
+      <div class="rail" style="background:var(--${color})"></div>
+      <div class="comment-body">
+        <div class="comment-tags">
+          <span class="tag-cat cat-${c.category}">${CAT_META[c.category].label}</span>
+          ${c.severity ? `<span class="tag-sev">${c.severity}</span>` : ''}
+          ${refs ? `<span class="tag-refs">${escapeHtml(refs)}</span>` : ''}
+          <span class="tag-source">${sourceLabel}</span>
+        </div>
+        <div class="comment-text">${escapeHtml(c.text)}</div>
+        <input class="note-input" type="text" placeholder="Add a note (who it's assigned to, status…)" value="${escapeHtml(st.note||'')}" data-row="${r.row_id}" data-ci="${ci}">
+      </div>
+    </div>`;
+  }).join('') : `<div class="no-open">No open comments logged — check Progress / Overall status.</div>`;
+
+  const closedHtml = closedComments.length ? `<div class="comment"><div class="check"></div><div class="rail" style="background:var(--line)"></div><div class="comment-body"><div class="comment-tags"><span class="tag-source">Closed note</span></div><div class="comment-text" style="color:var(--text-faint)">${escapeHtml(closedComments.map(c=>c.text).join(' · '))}</div></div></div>` : '';
+
+  const metaBits = [
+    r.client ? `<span><b>${escapeHtml(r.client)}</b></span>` : '',
+    r.area ? `<span>${escapeHtml(r.area)}${r.location ? ' · '+escapeHtml(r.location):''}</span>` : '',
+    r.category ? `<span>Cat. ${escapeHtml(r.category)}</span>` : '',
+    r.serial_no ? `<span>S/N ${escapeHtml(r.serial_no)}</span>` : '',
+    r.next_due ? `<span>Next due ${escapeHtml(r.next_due)}</span>` : '',
+    r.doc_no ? `<span>${escapeHtml(r.doc_no)}</span>` : '',
+  ].filter(Boolean).join('');
+
+  const div = document.createElement('div');
+  div.className = 'card' + (isOpen ? ' open' : '') + (fullyResolved ? ' fully-resolved' : '');
+  div.style.borderLeftColor = borderColor;
+  div.innerHTML = `
+    <div class="card-head">
+      <svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 6 15 12 9 18"/></svg>
+      <div class="card-main">
+        <div class="card-tag">${escapeHtml(r.tag_no||'—')}<span class="eq">${escapeHtml(r.equipment||'')}</span></div>
+        <div class="card-sub">${escapeHtml([r.manufacturer, r.model].filter(Boolean).join(' · '))}</div>
+      </div>
+      <div class="card-badges">
+        ${fullyResolved ? '<span class="badge badge-resolved">Resolved</span>' : ''}
+        ${catDots(r.categories)}
+        ${effortDots(r.effort_score)}
+        ${overallBadge}
+        ${progressBadge}
+      </div>
+    </div>
+    <div class="card-body">
+      <div class="meta-strip">${metaBits}</div>
+      ${commentsHtml}
+      ${closedHtml}
+    </div>
+  `;
+  div.querySelector('.card-head').addEventListener('click', ()=>{
+    if(state.openRows.has(r.row_id)) state.openRows.delete(r.row_id); else state.openRows.add(r.row_id);
+    div.classList.toggle('open');
+  });
+  div.querySelectorAll('.check input[type=checkbox]').forEach(cb=>{
+    cb.addEventListener('click', e=> e.stopPropagation());
+    cb.addEventListener('change', e=>{
+      const ci = parseInt(e.target.dataset.ci,10);
+      toggleResolved(r, openComments[ci], e.target.checked);
+      refreshHeaderStats();
+      render();
+    });
+  });
+  div.querySelectorAll('.note-input').forEach(inp=>{
+    inp.addEventListener('click', e=> e.stopPropagation());
+    inp.addEventListener('change', e=>{
+      const ci = parseInt(e.target.dataset.ci,10);
+      setNote(r, openComments[ci], e.target.value);
+    });
+  });
+  return div;
+}
+
+function render(){
+  const filtered = ROWS.filter(rowMatches);
+  const sorted = sortRows(filtered);
+  const list = document.getElementById('list');
+  const openIds = new Set([...list.querySelectorAll('.card.open')].map(el=>el.dataset.rowId));
+  list.innerHTML = '';
+  const openItemsShown = filtered.reduce((a,r)=>a+r.open_count,0);
+  document.getElementById('resultLine').innerHTML =
+    `Showing <b>${filtered.length}</b> of ${ROWS.length} fails &nbsp;·&nbsp; <b>${openItemsShown}</b> open items`;
+  document.getElementById('emptyState').style.display = filtered.length ? 'none' : 'block';
+  sorted.forEach(r=> list.appendChild(renderCard(r)));
+}
+
+// ---------------- upload flow ----------------
+const uploadBar = document.getElementById('uploadBar');
+const fileInput = document.getElementById('fileInput');
+
+function handleFile(file){
+  clearUploadError();
+  const reader = new FileReader();
+  reader.onload = function(e){
+    try{
+      const data = new Uint8Array(e.target.result);
+      const workbook = XLSX.read(data, { type:'array', cellDates:true });
+      const rows = parseWorkbookToRows(workbook);
+      ROWS = rows;
+      SOURCE_META = { filename:file.name, uploadedAt: new Date().toISOString(), rowCount: rows.length, builtIn:false };
+      lsSet(LS_DATA_KEY, { rows });
+      lsSet(LS_META_KEY, SOURCE_META);
+      state.openRows.clear();
+      refreshUploadBar(); refreshHeaderStats(); rebuildFilterUI(); render();
+    }catch(err){
+      showUploadError(err.message || 'Could not read that file.');
+    }
+  };
+  reader.onerror = function(){ showUploadError('Could not read that file.'); };
+  reader.readAsArrayBuffer(file);
+}
+function showUploadError(msg){
+  clearUploadError();
+  const el = document.createElement('div');
+  el.className = 'upload-error';
+  el.id = 'uploadErrorMsg';
+  el.textContent = msg;
+  uploadBar.appendChild(el);
+}
+function clearUploadError(){
+  const el = document.getElementById('uploadErrorMsg');
+  if(el) el.remove();
+}
+
+document.getElementById('uploadBtn').addEventListener('click', ()=> fileInput.click());
+fileInput.addEventListener('change', e=>{ if(e.target.files[0]) handleFile(e.target.files[0]); });
+['dragenter','dragover'].forEach(evt=> uploadBar.addEventListener(evt, e=>{ e.preventDefault(); uploadBar.classList.add('drag'); }));
+['dragleave','drop'].forEach(evt=> uploadBar.addEventListener(evt, e=>{ e.preventDefault(); uploadBar.classList.remove('drag'); }));
+uploadBar.addEventListener('drop', e=>{
+  const f = e.dataTransfer.files && e.dataTransfer.files[0];
+  if(f) handleFile(f);
+});
+
+document.getElementById('resetBtn').addEventListener('click', ()=>{
+  if(!confirm('Clear all "resolved" ticks and notes saved on this device? This does not affect the workbook itself.')) return;
+  RESOLVED = {};
+  lsSet(LS_RESOLVED_KEY, RESOLVED);
+  refreshHeaderStats(); render();
+});
+
+// ---------------- theme ----------------
+document.getElementById('themeToggle').addEventListener('click', ()=>{
+  const cur = document.documentElement.getAttribute('data-theme');
+  document.documentElement.setAttribute('data-theme', cur === 'dark' ? 'light' : 'dark');
+});
+
+// ---------------- report generation ----------------
+const reportBackdrop = document.getElementById('reportBackdrop');
+document.getElementById('reportBtn').addEventListener('click', ()=>{
+  const filtered = sortRows(ROWS.filter(rowMatches));
+  const lines = [];
+  lines.push(`Ex Fail Register — work list`);
+  lines.push(`Generated ${new Date().toLocaleString()}`);
+  lines.push('');
+  let itemCount = 0;
+  filtered.forEach(r=>{
+    const openComments = r.comments.filter(c=>c.source!=='closed').filter(c=>{
+      const st = RESOLVED[itemKey(r,c)];
+      return !(st && st.resolved);
+    });
+    if(!openComments.length) return;
+    lines.push(`${r.tag_no||'—'} — ${r.equipment||''} (${[r.manufacturer,r.model].filter(Boolean).join(' ')})`);
+    if(r.area) lines.push(`  ${r.area}${r.location ? ' · '+r.location : ''}`);
+    openComments.forEach(c=>{
+      const refs = c.refs && c.refs.length ? `Qs ${c.refs.join(', ')}: ` : '';
+      lines.push(`  - [${CAT_META[c.category].label}]${c.severity ? ' ('+c.severity+')':''} ${refs}${c.text}`);
+      itemCount++;
+    });
+    lines.push('');
+  });
+  if(!itemCount) lines.push('(Nothing outstanding matches the current filters.)');
+  document.getElementById('reportText').value = lines.join('\n');
+  reportBackdrop.classList.add('show');
+});
+document.getElementById('reportClose').addEventListener('click', ()=> reportBackdrop.classList.remove('show'));
+reportBackdrop.addEventListener('click', e=>{ if(e.target === reportBackdrop) reportBackdrop.classList.remove('show'); });
+document.getElementById('reportSelectAll').addEventListener('click', ()=>{
+  const ta = document.getElementById('reportText'); ta.focus(); ta.select();
+});
+
+// ---------------- filter/sort control listeners ----------------
+document.getElementById('search').addEventListener('input', e=>{ state.search = e.target.value.toLowerCase(); render(); });
+document.getElementById('clientFilter').addEventListener('change', e=>{ state.client = e.target.value; render(); });
+document.getElementById('areaFilter').addEventListener('change', e=>{ state.area = e.target.value; render(); });
+document.getElementById('progressFilter').addEventListener('change', e=>{ state.progress = e.target.value; render(); });
+document.getElementById('sortBy').addEventListener('change', e=>{ state.sort = e.target.value; render(); });
+document.getElementById('hideResolved').addEventListener('change', e=>{ state.hideResolved = e.target.checked; render(); });
+
+// ---------------- init ----------------
+loadInitial();
+refreshUploadBar();
+refreshHeaderStats();
+rebuildFilterUI();
+render();
+
+})();
+</script>
+</body>
+</html>

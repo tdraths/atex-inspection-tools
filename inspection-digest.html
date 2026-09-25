@@ -1,0 +1,715 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Daily Inspection Digest</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700;800&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --paper: #E9EBE3;
+    --paper-raised: #F4F5EF;
+    --ink: #1F2A2C;
+    --ink-soft: #55625F;
+    --line: #C7CBBE;
+    --line-strong: #9AA192;
+    --teal: #1E5C61;
+    --teal-deep: #123B3F;
+    --rust: #B24B26;
+    --rust-soft: #F1DCCB;
+    --amber: #A97418;
+    --amber-soft: #F2E4C4;
+    --green: #3E7A4E;
+    --green-soft: #DCE9DC;
+    --tag-bg: #DDE1D3;
+    --font-display: 'Archivo', sans-serif;
+    --font-body: 'IBM Plex Sans', sans-serif;
+    --font-mono: 'IBM Plex Mono', monospace;
+  }
+  :root:not([data-theme="light"]) {
+    @media (prefers-color-scheme: dark) {
+      --paper: #171E1D;
+      --paper-raised: #1E2726;
+      --ink: #E7EAE2;
+      --ink-soft: #A9B2A7;
+      --line: #3A433F;
+      --line-strong: #4C564F;
+      --teal: #4FA5AA;
+      --teal-deep: #7FC2C6;
+      --rust: #E08052;
+      --rust-soft: #3A241A;
+      --amber: #D9A54B;
+      --amber-soft: #3A3120;
+      --green: #7BBF8D;
+      --green-soft: #223228;
+      --tag-bg: #2A322E;
+    }
+  }
+  :root[data-theme="dark"] {
+    --paper: #171E1D;
+    --paper-raised: #1E2726;
+    --ink: #E7EAE2;
+    --ink-soft: #A9B2A7;
+    --line: #3A433F;
+    --line-strong: #4C564F;
+    --teal: #4FA5AA;
+    --teal-deep: #7FC2C6;
+    --rust: #E08052;
+    --rust-soft: #3A241A;
+    --amber: #D9A54B;
+    --amber-soft: #3A3120;
+    --green: #7BBF8D;
+    --green-soft: #223228;
+    --tag-bg: #2A322E;
+  }
+  * { box-sizing: border-box; }
+  html { scroll-padding-top: env(safe-area-inset-top, 0px); }
+  body {
+    margin: 0;
+    background: var(--paper);
+    color: var(--ink);
+    font-family: var(--font-body);
+    font-size: 15px;
+    line-height: 1.5;
+    padding-top: env(safe-area-inset-top, 0px);
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+  .wrap {
+    max-width: 780px;
+    margin: 0 auto;
+    padding: 32px 20px 64px;
+  }
+  header.masthead {
+    border-bottom: 2px solid var(--ink);
+    padding-bottom: 18px;
+    margin-bottom: 28px;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    gap: 16px;
+    flex-wrap: wrap;
+  }
+  header.masthead h1 {
+    font-family: var(--font-display);
+    font-weight: 800;
+    font-size: 27px;
+    letter-spacing: -0.01em;
+    margin: 0 0 4px;
+  }
+  header.masthead p {
+    margin: 0;
+    color: var(--ink-soft);
+    font-size: 14px;
+    max-width: 46ch;
+  }
+  .plate {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--ink-soft);
+    text-align: right;
+    line-height: 1.6;
+    white-space: nowrap;
+  }
+
+  .drop {
+    border: 1.5px dashed var(--line-strong);
+    border-radius: 3px;
+    background: var(--paper-raised);
+    padding: 26px 20px;
+    text-align: center;
+    cursor: pointer;
+    transition: border-color .15s ease, background .15s ease;
+  }
+  .drop:hover, .drop.dragover { border-color: var(--teal); background: var(--paper-raised); }
+  .drop input { display: none; }
+  .drop .drop-title {
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 16px;
+    margin-bottom: 4px;
+  }
+  .drop .drop-sub { color: var(--ink-soft); font-size: 13px; }
+  .drop .filename {
+    margin-top: 10px;
+    font-family: var(--font-mono);
+    font-size: 12.5px;
+    color: var(--teal);
+    word-break: break-all;
+  }
+
+  .error-box {
+    display: none;
+    margin-top: 14px;
+    border-left: 3px solid var(--rust);
+    background: var(--rust-soft);
+    padding: 12px 14px;
+    font-size: 13.5px;
+    border-radius: 2px;
+  }
+
+  #results { display: none; margin-top: 34px; }
+
+  .stats {
+    display: flex;
+    border-top: 1px solid var(--line);
+    border-bottom: 1px solid var(--line);
+    margin-bottom: 30px;
+  }
+  .stat {
+    flex: 1;
+    padding: 14px 10px 14px 0;
+    border-right: 1px solid var(--line);
+  }
+  .stat:last-child { border-right: none; padding-right: 0; }
+  .stat .num {
+    font-family: var(--font-display);
+    font-weight: 800;
+    font-size: 28px;
+    line-height: 1;
+  }
+  .stat.flagged .num { color: var(--rust); }
+  .stat.clear .num { color: var(--green); }
+  .stat .label {
+    margin-top: 5px;
+    font-size: 12.5px;
+    color: var(--ink-soft);
+  }
+
+  section.block { margin-bottom: 32px; }
+  section.block h2 {
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 15px;
+    margin: 0 0 12px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--line);
+  }
+  section.block > p.hint {
+    color: var(--ink-soft);
+    font-size: 13px;
+    margin: -6px 0 14px;
+  }
+
+  .finding {
+    border: 1px solid var(--line);
+    border-left: 3px solid var(--rust);
+    background: var(--paper-raised);
+    border-radius: 2px;
+    padding: 12px 14px;
+    margin-bottom: 10px;
+  }
+  .finding-head {
+    display: flex;
+    justify-content: space-between;
+    gap: 10px;
+    align-items: baseline;
+    flex-wrap: wrap;
+  }
+  .finding-head .loc {
+    font-family: var(--font-mono);
+    font-size: 12.5px;
+    background: var(--tag-bg);
+    padding: 2px 6px;
+    border-radius: 2px;
+  }
+  .finding-head .area {
+    font-size: 12px;
+    color: var(--ink-soft);
+  }
+  .finding .desc {
+    font-weight: 600;
+    margin: 6px 0 4px;
+  }
+  .finding ul {
+    margin: 6px 0 0;
+    padding-left: 18px;
+    font-size: 13.5px;
+    color: var(--ink-soft);
+  }
+  .finding li { margin-bottom: 3px; }
+  .finding li b { color: var(--ink); font-weight: 500; }
+
+  .clear-note {
+    border: 1px solid var(--line);
+    border-left: 3px solid var(--green);
+    background: var(--paper-raised);
+    border-radius: 2px;
+    padding: 10px 14px;
+    font-size: 13.5px;
+    color: var(--ink-soft);
+  }
+
+  label.field-label {
+    display: block;
+    font-size: 12.5px;
+    color: var(--ink-soft);
+    margin-bottom: 5px;
+  }
+  input[type="text"], textarea {
+    width: 100%;
+    font-family: var(--font-body);
+    font-size: 14px;
+    color: var(--ink);
+    background: var(--paper-raised);
+    border: 1px solid var(--line-strong);
+    border-radius: 2px;
+    padding: 10px 12px;
+  }
+  textarea { min-height: 260px; resize: vertical; line-height: 1.55; }
+  .field { margin-bottom: 16px; }
+  .field-row { display: flex; gap: 12px; flex-wrap: wrap; }
+  .field-row .field { flex: 1; min-width: 220px; }
+
+  .actions { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 12px; }
+  button, a.btn {
+    font-family: var(--font-body);
+    font-weight: 600;
+    font-size: 13.5px;
+    border-radius: 2px;
+    padding: 10px 16px;
+    border: 1px solid var(--ink);
+    background: var(--ink);
+    color: var(--paper);
+    cursor: pointer;
+    text-decoration: none;
+    display: inline-block;
+  }
+  button.secondary, a.btn.secondary {
+    background: transparent;
+    color: var(--ink);
+  }
+  button:active, a.btn:active { transform: translateY(1px); }
+  .attach-note {
+    margin-top: 10px;
+    font-size: 12.5px;
+    color: var(--ink-soft);
+  }
+  .attach-note b { color: var(--ink); }
+
+  .copied-flag {
+    font-size: 12.5px;
+    color: var(--teal);
+    margin-left: 4px;
+    opacity: 0;
+    transition: opacity .2s ease;
+  }
+  .copied-flag.show { opacity: 1; }
+
+  .preview-shell {
+    border: 1px solid var(--line-strong);
+    border-radius: 2px;
+    background: #FFFFFF;
+    padding: 18px;
+    overflow-x: auto;
+  }
+  .preview-note {
+    font-size: 12.5px;
+    color: var(--ink-soft);
+    margin: 8px 0 16px;
+  }
+  details.plain-toggle {
+    margin-top: 18px;
+  }
+  details.plain-toggle > summary {
+    cursor: pointer;
+    font-size: 13px;
+    color: var(--ink-soft);
+    margin-bottom: 10px;
+  }
+
+  @media (max-width: 520px) {
+    header.masthead { flex-direction: column; align-items: flex-start; }
+    .plate { text-align: left; }
+    .stats { flex-wrap: wrap; }
+    .stat { flex: 0 0 50%; border-right: none; border-bottom: 1px solid var(--line); padding: 12px 0; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="masthead">
+    <div>
+      <h1>Daily inspection digest</h1>
+      <p>Drop in the export from the inspection database. This reads it, flags what needs attention, and drafts the update email.</p>
+    </div>
+    <div class="plate" id="plateDate"></div>
+  </header>
+
+  <div class="drop" id="dropZone">
+    <input type="file" id="fileInput" accept=".tsv,.txt,.csv">
+    <div class="drop-title">Drop today's export here</div>
+    <div class="drop-sub">or tap to choose the .tsv file</div>
+    <div class="filename" id="filenameDisplay"></div>
+  </div>
+  <div class="error-box" id="errorBox"></div>
+
+  <div id="results">
+
+    <div class="stats" id="statsRow"></div>
+
+    <section class="block" id="flaggedSection">
+      <h2>What needs attention</h2>
+      <div id="flaggedList"></div>
+    </section>
+
+    <section class="block">
+      <h2>Email draft</h2>
+
+      <div class="field-row">
+        <div class="field">
+          <label class="field-label" for="toField">To</label>
+          <input type="text" id="toField" placeholder="name@company.com, name2@company.com">
+        </div>
+        <div class="field">
+          <label class="field-label" for="subjectField">Subject</label>
+          <input type="text" id="subjectField">
+        </div>
+      </div>
+
+      <label class="field-label">Preview — this is what gets copied</label>
+      <div class="preview-shell" id="htmlPreview"></div>
+      <p class="preview-note">Copy this, then paste straight into a new email in Gmail, Outlook or Apple Mail — the layout and colours carry over. Edit it there once it's pasted in.</p>
+
+      <div class="actions">
+        <button id="copyHtmlBtn">Copy formatted email</button>
+        <a class="btn secondary" id="mailtoBtn" href="#">Open in mail app (plain text)</a>
+        <span class="copied-flag" id="copiedFlag">Copied</span>
+      </div>
+      <div class="attach-note">Don't forget: attach <b id="attachFilename">the .tsv file</b> to the email yourself before sending — this tool can't do that part.</div>
+
+      <details class="plain-toggle">
+        <summary>Plain-text version (for mail apps that strip formatting)</summary>
+        <div class="field">
+          <textarea id="bodyField"></textarea>
+        </div>
+        <div class="actions">
+          <button class="secondary" id="copyBtn">Copy plain text</button>
+        </div>
+      </details>
+    </section>
+
+  </div>
+
+</div>
+
+<script>
+(function () {
+  const dropZone = document.getElementById('dropZone');
+  const fileInput = document.getElementById('fileInput');
+  const filenameDisplay = document.getElementById('filenameDisplay');
+  const errorBox = document.getElementById('errorBox');
+  const results = document.getElementById('results');
+  const statsRow = document.getElementById('statsRow');
+  const flaggedList = document.getElementById('flaggedList');
+  const toField = document.getElementById('toField');
+  const subjectField = document.getElementById('subjectField');
+  const bodyField = document.getElementById('bodyField');
+  const attachFilename = document.getElementById('attachFilename');
+  const copyBtn = document.getElementById('copyBtn');
+  const copyHtmlBtn = document.getElementById('copyHtmlBtn');
+  const mailtoBtn = document.getElementById('mailtoBtn');
+  const copiedFlag = document.getElementById('copiedFlag');
+  const plateDate = document.getElementById('plateDate');
+  const htmlPreview = document.getElementById('htmlPreview');
+  let lastHtmlEmail = '';
+
+  const todayStr = new Date().toLocaleDateString('en-IE', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+  plateDate.textContent = todayStr;
+
+  // --- persist recipient list across visits (per-device convenience only) ---
+  try {
+    const savedTo = localStorage.getItem('digest_to');
+    if (savedTo) toField.value = savedTo;
+  } catch (e) {}
+  toField.addEventListener('input', () => {
+    try { localStorage.setItem('digest_to', toField.value); } catch (e) {}
+  });
+
+  // --- drag & drop wiring ---
+  dropZone.addEventListener('click', () => fileInput.click());
+  ['dragenter', 'dragover'].forEach(evt =>
+    dropZone.addEventListener(evt, e => { e.preventDefault(); dropZone.classList.add('dragover'); })
+  );
+  ['dragleave', 'drop'].forEach(evt =>
+    dropZone.addEventListener(evt, e => { e.preventDefault(); dropZone.classList.remove('dragover'); })
+  );
+  dropZone.addEventListener('drop', e => {
+    const f = e.dataTransfer.files[0];
+    if (f) handleFile(f);
+  });
+  fileInput.addEventListener('change', () => {
+    if (fileInput.files[0]) handleFile(fileInput.files[0]);
+  });
+
+  function showError(msg) {
+    errorBox.textContent = msg;
+    errorBox.style.display = 'block';
+    results.style.display = 'none';
+  }
+
+  function handleFile(file) {
+    errorBox.style.display = 'none';
+    filenameDisplay.textContent = file.name;
+    attachFilename.textContent = file.name;
+    const reader = new FileReader();
+    reader.onload = () => {
+      try {
+        const text = reader.result;
+        const delimiter = text.indexOf('\t') !== -1 ? '\t' : ',';
+        const rows = parseDelimited(text, delimiter);
+        if (rows.length < 2) {
+          showError("Couldn't find any data rows in that file — check it's the right export.");
+          return;
+        }
+        processRows(rows, file.name);
+      } catch (err) {
+        showError("Couldn't read that file: " + err.message);
+      }
+    };
+    reader.onerror = () => showError('Could not read the file from disk.');
+    reader.readAsText(file);
+  }
+
+  // Generic quoted-delimited parser (handles embedded newlines, tabs/commas, doubled quotes)
+  function parseDelimited(text, delimiter) {
+    const rows = [];
+    let row = [];
+    let field = '';
+    let inQuotes = false;
+    for (let i = 0; i < text.length; i++) {
+      const c = text[i];
+      if (inQuotes) {
+        if (c === '"') {
+          if (text[i + 1] === '"') { field += '"'; i++; }
+          else { inQuotes = false; }
+        } else {
+          field += c;
+        }
+      } else {
+        if (c === '"') { inQuotes = true; }
+        else if (c === delimiter) { row.push(field); field = ''; }
+        else if (c === '\r') { /* skip */ }
+        else if (c === '\n') { row.push(field); field = ''; rows.push(row); row = []; }
+        else { field += c; }
+      }
+    }
+    if (field.length > 0 || row.length > 0) { row.push(field); rows.push(row); }
+    return rows.filter(r => r.length > 1 || (r[0] && r[0].trim() !== ''));
+  }
+
+  function findCol(header, names) {
+    for (const name of names) {
+      const idx = header.findIndex(h => h.trim().toLowerCase() === name.toLowerCase());
+      if (idx !== -1) return idx;
+    }
+    return -1;
+  }
+
+  function parseObservations(raw) {
+    if (!raw) return [];
+    return raw.split('\n').map(line => line.trim()).filter(Boolean).map(line => {
+      const obsMatch = line.match(/Observation:\s*"?(.*?)"?\s*$/i);
+      const obsText = obsMatch ? obsMatch[1].trim() : line;
+      const metaPart = obsMatch ? line.slice(0, obsMatch.index) : '';
+      const metaBits = metaPart.split(',').map(s => s.trim()).filter(Boolean);
+      const inspector = metaBits.length >= 3 ? metaBits[2] : '';
+      return { text: obsText, inspector };
+    });
+  }
+
+  function processRows(rows, filename) {
+    const header = rows[0];
+    const dataRows = rows.slice(1).filter(r => r.some(v => v && v.trim() !== ''));
+
+    const col = {
+      loc: findCol(header, ['Functional location']),
+      desc: findCol(header, ['Equipment Description']),
+      area: findCol(header, ['Area']),
+      areaDesc: findCol(header, ['Area Description']),
+      activityDate: findCol(header, ['Activity date']),
+      status: findCol(header, ['Current status']),
+      responses: findCol(header, ['Responses']),
+      review: findCol(header, ['Activity Review']),
+    };
+
+    const items = dataRows.map(r => ({
+      loc: col.loc !== -1 ? r[col.loc] : '',
+      desc: col.desc !== -1 ? r[col.desc] : '',
+      area: col.area !== -1 ? r[col.area] : '',
+      areaDesc: col.areaDesc !== -1 ? r[col.areaDesc] : '',
+      date: col.activityDate !== -1 ? r[col.activityDate] : '',
+      status: col.status !== -1 ? r[col.status] : '',
+      review: col.review !== -1 ? r[col.review] : '',
+      observations: col.responses !== -1 ? parseObservations(r[col.responses]) : [],
+    })).filter(it => it.loc || it.desc);
+
+    const total = items.length;
+    const nonCompliant = items.filter(it => /non.?compliant/i.test(it.status));
+    const compliant = items.filter(it => !/non.?compliant/i.test(it.status));
+    const unreviewed = items.filter(it => /unreviewed/i.test(it.review));
+
+    renderStats(total, compliant.length, nonCompliant.length, unreviewed.length);
+    renderFlagged(nonCompliant, compliant.length);
+    buildEmail(filename, total, compliant.length, nonCompliant, items);
+
+    results.style.display = 'block';
+  }
+
+  function renderStats(total, compliantCount, flaggedCount, unreviewedCount) {
+    statsRow.innerHTML = `
+      <div class="stat"><div class="num">${total}</div><div class="label">item${total === 1 ? '' : 's'} inspected</div></div>
+      <div class="stat clear"><div class="num">${compliantCount}</div><div class="label">compliant</div></div>
+      <div class="stat flagged"><div class="num">${flaggedCount}</div><div class="label">flagged</div></div>
+      <div class="stat"><div class="num">${unreviewedCount}</div><div class="label">awaiting your review</div></div>
+    `;
+  }
+
+  function esc(s) {
+    return (s || '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  }
+
+  function renderFlagged(nonCompliant, compliantCount) {
+    if (nonCompliant.length === 0) {
+      flaggedList.innerHTML = `<div class="clear-note">Nothing flagged today — every item inspected came back compliant.</div>`;
+      return;
+    }
+    flaggedList.innerHTML = nonCompliant.map(it => `
+      <div class="finding">
+        <div class="finding-head">
+          <span class="loc">${esc(it.loc)}</span>
+          <span class="area">${esc(it.area)}${it.areaDesc ? ' · ' + esc(it.areaDesc) : ''}</span>
+        </div>
+        <div class="desc">${esc(it.desc)}</div>
+        ${it.observations.length ? `<ul>${it.observations.map(o => `<li>${esc(o.text)}</li>`).join('')}</ul>` : ''}
+      </div>
+    `).join('');
+  }
+
+  function shortDate(iso) {
+    if (!iso) return '';
+    const d = new Date(iso);
+    if (isNaN(d)) return iso;
+    return d.toLocaleDateString('en-IE', { day: 'numeric', month: 'short' });
+  }
+
+  function buildEmail(filename, total, compliantCount, nonCompliant, allItems) {
+    const dates = allItems.map(it => it.date).filter(Boolean).sort();
+    let dateLine = todayStr;
+    if (dates.length) {
+      const first = shortDate(dates[0]);
+      const last = shortDate(dates[dates.length - 1]);
+      dateLine = first === last ? first : `${first} – ${last}`;
+    }
+
+    subjectField.value = `Inspection update – ${dateLine}`;
+
+    let body = `Hi all,\n\nToday's inspection update, covering ${dateLine}.\n\n`;
+    body += `${total} item${total === 1 ? ' was' : 's were'} inspected. `;
+    body += nonCompliant.length === 0
+      ? `Everything came back compliant — no action needed.\n\n`
+      : `${compliantCount} came back compliant. ${nonCompliant.length} ${nonCompliant.length === 1 ? 'item needs' : 'items need'} attention:\n\n`;
+
+    nonCompliant.forEach(it => {
+      body += `- ${it.desc || 'Equipment'} (${it.loc}), ${it.area}${it.areaDesc ? ', ' + it.areaDesc : ''}\n`;
+      if (it.observations.length) {
+        it.observations.forEach(o => { body += `    ${o.text}\n`; });
+      }
+      body += `\n`;
+    });
+
+    body += `Full inspection data is attached (${filename}).\n\nThanks,\nTom`;
+
+    bodyField.value = body;
+    updateMailto();
+
+    lastHtmlEmail = buildHtmlEmail(filename, dateLine, total, compliantCount, nonCompliant);
+    htmlPreview.innerHTML = lastHtmlEmail;
+  }
+
+  // Email-client-safe HTML (inline styles, table layout — works in Outlook/Gmail/Apple Mail)
+  function buildHtmlEmail(filename, dateLine, total, compliantCount, nonCompliant) {
+    const flaggedCount = nonCompliant.length;
+    let html = `<div style="font-family:Arial,Helvetica,sans-serif;color:#1F2A2C;font-size:14px;line-height:1.5;max-width:560px;">`;
+    html += `<p style="margin:0 0 12px;">Hi all,</p>`;
+    html += `<p style="margin:0 0 18px;">Today's inspection update, covering <b>${esc(dateLine)}</b>.</p>`;
+
+    html += `<table role="presentation" cellpadding="0" cellspacing="0" style="width:100%;border-top:1px solid #C7CBBE;border-bottom:1px solid #C7CBBE;margin:0 0 20px;"><tr>`;
+    html += `<td style="padding:10px 14px 10px 0;border-right:1px solid #C7CBBE;"><div style="font-size:22px;font-weight:bold;">${total}</div><div style="font-size:11px;color:#55625F;">inspected</div></td>`;
+    html += `<td style="padding:10px 14px;border-right:1px solid #C7CBBE;"><div style="font-size:22px;font-weight:bold;color:#3E7A4E;">${compliantCount}</div><div style="font-size:11px;color:#55625F;">compliant</div></td>`;
+    html += `<td style="padding:10px 14px;"><div style="font-size:22px;font-weight:bold;color:#B24B26;">${flaggedCount}</div><div style="font-size:11px;color:#55625F;">flagged</div></td>`;
+    html += `</tr></table>`;
+
+    if (flaggedCount === 0) {
+      html += `<p style="margin:0 0 18px;">Everything came back compliant — no action needed.</p>`;
+    } else {
+      html += `<p style="margin:0 0 12px;font-weight:bold;">What needs attention</p>`;
+      nonCompliant.forEach(it => {
+        html += `<div style="border:1px solid #C7CBBE;border-left:3px solid #B24B26;padding:10px 12px;margin:0 0 10px;">`;
+        html += `<div style="font-size:12px;margin:0 0 4px;">`;
+        html += `<span style="font-family:'Courier New',monospace;background:#DDE1D3;padding:1px 5px;">${esc(it.loc)}</span>`;
+        html += `<span style="color:#55625F;"> &nbsp;${esc(it.area)}${it.areaDesc ? ' &middot; ' + esc(it.areaDesc) : ''}</span>`;
+        html += `</div>`;
+        html += `<div style="font-weight:bold;">${esc(it.desc)}</div>`;
+        if (it.observations.length) {
+          html += `<ul style="margin:6px 0 0;padding-left:18px;font-size:13px;color:#55625F;">`;
+          it.observations.forEach(o => { html += `<li style="margin-bottom:2px;">${esc(o.text)}</li>`; });
+          html += `</ul>`;
+        }
+        html += `</div>`;
+      });
+    }
+
+    html += `<p style="margin:18px 0 0;">Full inspection data is attached (${esc(filename)}).</p>`;
+    html += `<p style="margin:18px 0 0;">Thanks,<br>Tom</p>`;
+    html += `</div>`;
+    return html;
+  }
+
+  function updateMailto() {
+    const to = encodeURIComponent(toField.value.trim());
+    const subject = encodeURIComponent(subjectField.value);
+    const body = encodeURIComponent(bodyField.value);
+    mailtoBtn.href = `mailto:${to}?subject=${subject}&body=${body}`;
+  }
+  toField.addEventListener('input', updateMailto);
+  subjectField.addEventListener('input', updateMailto);
+  bodyField.addEventListener('input', updateMailto);
+
+  function flashCopied() {
+    copiedFlag.classList.add('show');
+    setTimeout(() => copiedFlag.classList.remove('show'), 1500);
+  }
+
+  copyBtn.addEventListener('click', async () => {
+    try {
+      await navigator.clipboard.writeText(bodyField.value);
+    } catch (e) {
+      bodyField.select();
+      document.execCommand('copy');
+    }
+    flashCopied();
+  });
+
+  copyHtmlBtn.addEventListener('click', async () => {
+    try {
+      if (navigator.clipboard && window.ClipboardItem) {
+        const item = new ClipboardItem({
+          'text/html': new Blob([lastHtmlEmail], { type: 'text/html' }),
+          'text/plain': new Blob([bodyField.value], { type: 'text/plain' }),
+        });
+        await navigator.clipboard.write([item]);
+      } else {
+        await navigator.clipboard.writeText(bodyField.value);
+      }
+    } catch (e) {
+      try { await navigator.clipboard.writeText(bodyField.value); } catch (e2) {}
+    }
+    flashCopied();
+  });
+})();
+</script>
+</body>
+</html>
