@@ -1,0 +1,719 @@
+<!DOCTYPE html>
+<html lang="en-IE">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Site pack builder</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600&family=Barlow+Condensed:wght@600;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+:root{
+  --bg:#E6EAEE; --panel:#FFFFFF; --ink:#17222B; --muted:#586774; --line:#C7D0D8;
+  --accent:#1E4C5D; --accent-ink:#FFFFFF; --stage:#C3CBD3; --warn:#8A4B00; --warn-bg:#FFF1DC;
+  --body:"Barlow",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  --head:"Barlow Condensed","Barlow",system-ui,sans-serif;
+}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font:400 15px/1.45 var(--body)}
+.app{display:grid;grid-template-columns:340px 1fr;height:100vh}
+.rail{background:var(--panel);border-right:1px solid var(--line);overflow-y:auto;padding:20px 20px 28px}
+.rail h1{font:700 28px/1.1 var(--head);margin:0 0 4px;letter-spacing:.2px}
+.rail .sub{color:var(--muted);margin:0 0 18px;font-size:14px}
+.rail section{padding:14px 0;border-top:1px solid var(--line)}
+.rail h2{font:600 18px/1.2 var(--head);margin:0 0 8px}
+.hint{color:var(--muted);font-size:13px;margin:4px 0 0}
+.btn,button,.filebtn{font:500 14px/1 var(--body);border:1px solid var(--line);background:#F4F6F8;color:var(--ink);padding:9px 12px;border-radius:5px;cursor:pointer}
+.btn:hover,button:hover:not(:disabled),.filebtn:hover{background:#E9EEF2}
+button:disabled{opacity:.45;cursor:not-allowed}
+button.primary{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+button.primary:hover:not(:disabled){background:#173B49}
+.filebtn{display:inline-block}
+.filebtn input{position:absolute;opacity:0;width:1px;height:1px}
+.filebtn:focus-within,button:focus-visible,select:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.fileinfo{margin-top:8px;font-size:13px;color:var(--muted);word-break:break-word}
+select{font:400 14px var(--body);padding:7px 8px;border:1px solid var(--line);border-radius:5px;background:#fff;max-width:100%}
+.row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.type-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}
+.type-head .row button{padding:5px 8px;font-size:13px}
+#typeList{max-height:260px;overflow-y:auto;border:1px solid var(--line);border-radius:5px}
+.type-row{display:grid;grid-template-columns:22px 34px 1fr auto;gap:8px;align-items:center;padding:5px 8px;border-bottom:1px solid #EDF0F3}
+.type-row:last-child{border-bottom:0}
+.type-row input[type=color]{width:30px;height:22px;padding:0;border:1px solid var(--line);border-radius:3px;background:none;cursor:pointer}
+.type-row .pfx{font-weight:600}
+.type-row .cnt{color:var(--muted);font-size:13px}
+.opt{display:flex;gap:8px;align-items:flex-start;margin:6px 0;font-size:14px}
+.opt input{margin-top:3px}
+#status{margin-top:12px;font-size:13px;color:var(--muted);min-height:20px}
+#status.warn{color:var(--warn);background:var(--warn-bg);padding:8px 10px;border-radius:5px}
+.main{display:flex;flex-direction:column;min-width:0;height:100vh}
+.toolbar{background:var(--panel);border-bottom:1px solid var(--line);padding:10px 16px;display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.toolbar .grow{flex:1}
+.toolbar select{width:min(360px,100%)}
+#sheetInfo{padding:8px 16px;font-size:13px;color:var(--muted);background:#F2F5F7;border-bottom:1px solid var(--line);min-height:34px}
+#stage{flex:1;overflow:auto;background:var(--stage);padding:16px;position:relative}
+#sheetCanvas{display:block;margin:0 auto;background:#fff;border:1px solid #9AA6B0}
+.empty{max-width:420px;margin:12vh auto 0;text-align:center;color:#34424D}
+.empty h2{font:600 22px/1.2 var(--head);margin:0 0 6px}
+#report{border-top:1px solid var(--line);background:var(--panel);padding:10px 16px;max-height:34vh;overflow-y:auto;font-size:14px}
+#report:empty{display:none}
+#report h3{font:600 17px/1.2 var(--head);margin:0 0 4px}
+#report p{margin:4px 0}
+#report details{margin:6px 0}
+#report summary{cursor:pointer;font-weight:500}
+#report .taglist{margin:6px 0 2px;color:#34424D;font-size:13px;word-break:break-word}
+.key{display:flex;gap:14px;flex-wrap:wrap;font-size:13px;color:#34424D;padding:8px 16px;background:var(--panel);border-bottom:1px solid var(--line)}
+.key span{display:inline-flex;align-items:center;gap:6px}
+.key i{display:inline-block;width:26px;height:14px;background:rgba(30,76,93,.42);border:2px solid #1E4C5D}
+.key i.dash{border-style:dashed;background:rgba(30,76,93,.34)}
+.key i.faint{border:0;background:rgba(30,76,93,.14)}
+@media (max-width:900px){
+  .app{grid-template-columns:1fr;height:auto}
+  .rail{border-right:0;border-bottom:1px solid var(--line)}
+  .main{height:auto;min-height:80vh}
+}
+</style>
+</head>
+<body>
+<div class="app">
+  <aside class="rail">
+    <h1>Site pack builder</h1>
+    <p class="sub">Colour-code P&amp;ID sheets by equipment type and save a pack to print. Files stay on this computer.</p>
+
+    <section>
+      <h2>Equipment list</h2>
+      <label class="filebtn">Choose list
+        <input type="file" id="listFile" accept=".csv,.tsv,.txt,.xlsx,.xls">
+      </label>
+      <div class="fileinfo" id="listInfo">CSV, TSV or Excel export.</div>
+      <div id="tagColWrap" style="margin-top:8px;display:none">
+        <label for="tagCol" class="hint" style="display:block;margin:0 0 3px">Column holding the P&amp;ID tag</label>
+        <select id="tagCol"></select>
+      </div>
+    </section>
+
+    <section>
+      <h2>P&amp;ID files</h2>
+      <label class="filebtn">Choose PDFs
+        <input type="file" id="pidFiles" accept="application/pdf,.pdf" multiple>
+      </label>
+      <div class="fileinfo" id="pidInfo">One or more PDF files.</div>
+    </section>
+
+    <section>
+      <div class="type-head">
+        <h2 style="margin:0">Equipment types</h2>
+        <div class="row">
+          <button type="button" id="typesAll">All</button>
+          <button type="button" id="typesNone">None</button>
+        </div>
+      </div>
+      <div id="typeList" aria-live="polite"></div>
+      <p class="hint" id="typeHint">Types come from the letters at the start of each tag (HV-, PIT-). Click a colour to change it.</p>
+    </section>
+
+    <section>
+      <h2>Options</h2>
+      <label class="opt"><input type="checkbox" id="optOther" checked><span>Also shade tags of the same type that are not on the list</span></label>
+      <label class="opt"><input type="checkbox" id="optLegend" checked><span>Add a small legend with counts to each sheet</span></label>
+      <label class="opt"><input type="checkbox" id="optHits" checked><span>Leave out sheets with no highlights</span></label>
+    </section>
+
+    <section>
+      <button type="button" class="primary" id="scanBtn" disabled>Scan sheets</button>
+      <div id="status" role="status" aria-live="polite"></div>
+    </section>
+  </aside>
+
+  <div class="main">
+    <div class="toolbar">
+      <button type="button" id="prevBtn" disabled aria-label="Previous sheet">Previous</button>
+      <button type="button" id="nextBtn" disabled aria-label="Next sheet">Next</button>
+      <select id="sheetSel" aria-label="Sheet" disabled></select>
+      <button type="button" id="zoomOut" disabled aria-label="Zoom out">&minus;</button>
+      <button type="button" id="zoomFit" disabled>Fit width</button>
+      <button type="button" id="zoomIn" disabled aria-label="Zoom in">+</button>
+      <label class="opt" style="margin:0"><input type="checkbox" id="optDebug"><span>Show tag text the tool read</span></label>
+      <span class="grow"></span>
+      <button type="button" class="primary" id="dlBtn" disabled>Download site pack</button>
+    </div>
+    <div class="key" aria-label="Highlight key">
+      <span><i></i>Full tag read and on the list</span>
+      <span><i class="dash"></i>Start of tag on the list, loop number not confirmed</span>
+      <span><i class="faint"></i>Same type, not on the list</span>
+    </div>
+    <div id="sheetInfo"></div>
+    <div id="stage">
+      <div class="empty" id="emptyMsg">
+        <h2>Load a list and some P&amp;IDs</h2>
+        <p>Choose your equipment list and the P&amp;ID PDFs on the left, tick the types you want, then scan.</p>
+      </div>
+      <canvas id="sheetCanvas" style="display:none"></canvas>
+    </div>
+    <div id="report"></div>
+  </div>
+</div>
+
+<script>
+// ==== CORE START (pure logic: no DOM)
+const norm = s => String(s).toUpperCase().replace(/[^A-Z0-9]/g, '');
+
+function parseDelimited(text) {
+  text = text.replace(/^\uFEFF/, '');
+  const first = text.split(/\r?\n/, 1)[0] || '';
+  const counts = { '\t': (first.match(/\t/g) || []).length, ',': (first.match(/,/g) || []).length, ';': (first.match(/;/g) || []).length };
+  const delim = Object.keys(counts).sort((a, b) => counts[b] - counts[a])[0];
+  const rows = []; let row = [], cur = '', inQ = false;
+  for (let i = 0; i < text.length; i++) {
+    const ch = text[i];
+    if (inQ) {
+      if (ch === '"') { if (text[i + 1] === '"') { cur += '"'; i++; } else inQ = false; }
+      else cur += ch;
+    } else if (ch === '"') inQ = true;
+    else if (ch === delim) { row.push(cur); cur = ''; }
+    else if (ch === '\n' || ch === '\r') { if (ch === '\r' && text[i + 1] === '\n') i++; row.push(cur); cur = ''; rows.push(row); row = []; }
+    else cur += ch;
+  }
+  if (cur !== '' || row.length) { row.push(cur); rows.push(row); }
+  return rows.filter(r => r.some(c => String(c).trim() !== ''));
+}
+
+// Turn pdf.js text items into fragments with a bounding box, direction and centre.
+function toFrags(items) {
+  const frags = [];
+  for (const it of items) {
+    if (!it.str || !it.str.trim() || !it.transform) continue;
+    const [a, b, c, d, e, f] = it.transform;
+    const ul = Math.hypot(a, b) || 1, vl = Math.hypot(c, d) || 1;
+    const ux = a / ul, uy = b / ul, vx = c / vl, vy = d / vl;
+    const w = it.width > 0 ? it.width : vl * 0.55 * it.str.length;
+    const h = vl;
+    const x0 = e - vx * 0.2 * h, y0 = f - vy * 0.2 * h;
+    const xs = [x0, x0 + ux * w, x0 + ux * w + vx * 1.2 * h, x0 + vx * 1.2 * h];
+    const ys = [y0, y0 + uy * w, y0 + uy * w + vy * 1.2 * h, y0 + vy * 1.2 * h];
+    frags.push({
+      str: it.str.trim(), norm: norm(it.str),
+      box: [Math.min(...xs), Math.min(...ys), Math.max(...xs), Math.max(...ys)],
+      cx: e + ux * w / 2 + vx * h * 0.4, cy: f + uy * w / 2 + vy * h * 0.4,
+      ux, uy, vx, vy, w, h
+    });
+  }
+  return frags.filter(f => f.norm);
+}
+
+const unionBox = (p, q) => [Math.min(p[0], q[0]), Math.min(p[1], q[1]), Math.max(p[2], q[2]), Math.max(p[3], q[3])];
+
+// Find a loop-number-like fragment sitting just below and roughly centred under fragment a.
+function findBelow(a, frags) {
+  let best = null, bestScore = Infinity;
+  for (const b of frags) {
+    if (b === a) continue;
+    if (!/^\d{1,5}[A-Z]?$/.test(b.norm)) continue;
+    if (a.ux * b.ux + a.uy * b.uy < 0.98) continue;
+    const dx = b.cx - a.cx, dy = b.cy - a.cy;
+    const along = dx * a.ux + dy * a.uy, perp = dx * a.vx + dy * a.vy;
+    if (perp > -0.3 * a.h || perp < -3.2 * a.h) continue;
+    if (Math.abs(along) > 0.75 * Math.max(a.w, b.w) + 0.5 * a.h) continue;
+    const score = -perp + Math.abs(along);
+    if (score < bestScore) { bestScore = score; best = b; }
+  }
+  return best;
+}
+
+// prefixes: selected type prefixes, longest first.
+// byNorm: Map normalised tag -> raw tag (selected types only).
+// byPrefix: Map prefix -> [{raw, norm}] (selected types only).
+function detect(frags, prefixes, byNorm, byPrefix) {
+  const out = [];
+  for (const a of frags) {
+    let pfx = null;
+    for (const p of prefixes) {
+      if (a.norm.startsWith(p)) {
+        const rest = a.norm.slice(p.length);
+        if (rest === '' || /^\d/.test(rest)) { pfx = p; break; }
+      }
+    }
+    if (!pfx) continue;
+    const rest = a.norm.slice(pfx.length);
+    const below = findBelow(a, frags);
+    if (rest === '' && !below) continue;           // bare type letters with nothing under them
+    const pool = byPrefix.get(pfx) || [];
+    let tier = 'other', box = a.box, tag = null, cands = [], label = a.str;
+
+    if (rest !== '' && byNorm.has(a.norm)) {         // whole tag in one fragment
+      tier = 'exact'; tag = byNorm.get(a.norm); label = tag;
+    } else if (below) {                              // tag split over two lines
+      const full = a.norm + below.norm;
+      box = unionBox(a.box, below.box);
+      label = a.str + ' / ' + below.str;
+      if (byNorm.has(full)) { tier = 'exact'; tag = byNorm.get(full); label = tag; }
+      else {
+        cands = pool.filter(t => t.norm.startsWith(full)).map(t => t.raw);
+        if (cands.length) tier = 'prefix';
+      }
+    } else {                                         // no loop number found below
+      cands = pool.filter(t => t.norm.startsWith(a.norm)).map(t => t.raw);
+      if (cands.length) tier = 'prefix';
+    }
+    out.push({ box, tier, prefix: pfx, label, tag, cands: cands.slice(0, 300) });
+  }
+  return out;
+}
+// ==== CORE END
+
+// ---------- app state ----------
+const $ = s => document.querySelector(s);
+const PALETTE = ['#E69F00', '#56B4E9', '#009E73', '#F0E442', '#0072B2', '#D55E00', '#CC79A7', '#8E3FB0', '#A0522D', '#00A6A6'];
+const state = {
+  eq: null,            // {name, headers, data, tagCol, tags:[{raw,norm,prefix}]}
+  pdfs: [],            // {name, bytes, doc, numPages}
+  sheets: [],          // {fileIdx, pageNum, highlights|null, fragCount}
+  types: new Map(),    // prefix -> {count, color, on}
+  current: -1, zoom: 1, report: null, busy: false,
+  opts: { showOther: true, legend: true, onlyHits: true, debug: false }
+};
+
+const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const sheetLabel = s => state.pdfs[s.fileIdx].name.replace(/\.pdf$/i, '') + ' p.' + s.pageNum;
+function setStatus(msg, warn) { const el = $('#status'); el.textContent = msg || ''; el.className = warn ? 'warn' : ''; }
+const hexToRgb = h => ({ r: parseInt(h.slice(1, 3), 16) / 255, g: parseInt(h.slice(3, 5), 16) / 255, b: parseInt(h.slice(5, 7), 16) / 255 });
+
+// ---------- pdf.js setup ----------
+let pdfReady = null;
+function initPdfJs() {
+  if (pdfReady) return pdfReady;
+  pdfReady = (async () => {
+    if (typeof pdfjsLib === 'undefined') throw new Error('PDF library did not load. Check your internet connection and reload.');
+    const url = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+    try {
+      const r = await fetch(url); const t = await r.text();
+      pdfjsLib.GlobalWorkerOptions.workerSrc = URL.createObjectURL(new Blob([t], { type: 'text/javascript' }));
+    } catch (e) { pdfjsLib.GlobalWorkerOptions.workerSrc = url; }
+  })();
+  return pdfReady;
+}
+
+// ---------- equipment list ----------
+$('#listFile').addEventListener('change', async e => {
+  const file = e.target.files[0]; if (!file) return;
+  try {
+    let rows;
+    if (/\.xlsx?$/i.test(file.name)) {
+      if (typeof XLSX === 'undefined') throw new Error('Excel reader did not load. Save the list as CSV or check your connection.');
+      const wb = XLSX.read(await file.arrayBuffer(), { type: 'array' });
+      rows = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], { header: 1, raw: false, defval: '' })
+        .filter(r => r.some(c => String(c).trim() !== ''));
+    } else rows = parseDelimited(await file.text());
+    if (rows.length < 2) throw new Error('No data rows found in that file.');
+    const headers = rows[0].map(h => String(h).trim());
+    let guess = headers.findIndex(h => /tag/i.test(h) && !/rfid|epc|uid/i.test(h));
+    if (guess < 0) guess = headers.findIndex(h => /tag/i.test(h));
+    if (guess < 0) guess = 0;
+    state.eq = { name: file.name, headers, data: rows.slice(1), tagCol: guess, tags: [] };
+    const sel = $('#tagCol'); sel.innerHTML = '';
+    headers.forEach((h, i) => { const o = document.createElement('option'); o.value = i; o.textContent = h || ('Column ' + (i + 1)); sel.appendChild(o); });
+    sel.value = guess; $('#tagColWrap').style.display = '';
+    buildTags();
+  } catch (err) { setStatus(err.message, true); }
+});
+$('#tagCol').addEventListener('change', e => { state.eq.tagCol = +e.target.value; buildTags(); });
+
+function buildTags() {
+  const eq = state.eq, seen = new Set(), tags = [];
+  for (const r of eq.data) {
+    const raw = String(r[eq.tagCol] ?? '').trim(); if (!raw) continue;
+    const n = norm(raw); if (!n || seen.has(n)) continue; seen.add(n);
+    const m = raw.toUpperCase().match(/^[A-Z]+/);
+    if (!m) continue;
+    tags.push({ raw, norm: n, prefix: m[0] });
+  }
+  eq.tags = tags;
+  const old = state.types, next = new Map(); const counts = new Map();
+  tags.forEach(t => counts.set(t.prefix, (counts.get(t.prefix) || 0) + 1));
+  [...counts.entries()].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0])).forEach(([p, c], i) => {
+    const prev = old.get(p);
+    next.set(p, { count: c, color: prev ? prev.color : PALETTE[i % PALETTE.length], on: prev ? prev.on : false });
+  });
+  state.types = next;
+  $('#listInfo').textContent = `${eq.name}: ${tags.length} tags in ${next.size} types.`;
+  renderTypes(); invalidate();
+}
+
+function renderTypes() {
+  const box = $('#typeList'); box.innerHTML = '';
+  if (!state.types.size) { box.innerHTML = '<div class="type-row" style="display:block;color:var(--muted)">Load a list to see its types.</div>'; return; }
+  for (const [p, t] of state.types) {
+    const row = document.createElement('div'); row.className = 'type-row';
+    row.innerHTML = `<input type="checkbox" aria-label="Include ${esc(p)}" ${t.on ? 'checked' : ''}>
+      <input type="color" value="${t.color}" aria-label="Colour for ${esc(p)}">
+      <span class="pfx">${esc(p)}</span><span class="cnt">${t.count}</span>`;
+    const [cb, col] = row.querySelectorAll('input');
+    cb.addEventListener('change', () => { t.on = cb.checked; invalidate(); });
+    col.addEventListener('input', () => { t.color = col.value; if (state.current >= 0) showSheet(state.current); });
+    box.appendChild(row);
+  }
+  const n = state.types.size > PALETTE.length;
+  $('#typeHint').textContent = n ? 'Colours repeat after ten types, so tick only the types you need for the visit.' : 'Types come from the letters at the start of each tag (HV-, PIT-). Click a colour to change it.';
+}
+$('#typesAll').addEventListener('click', () => { state.types.forEach(t => t.on = true); renderTypes(); invalidate(); });
+$('#typesNone').addEventListener('click', () => { state.types.forEach(t => t.on = false); renderTypes(); invalidate(); });
+
+// ---------- P&ID files ----------
+$('#pidFiles').addEventListener('change', async e => {
+  const files = [...e.target.files]; if (!files.length) return;
+  try {
+    setStatus('Opening PDFs...'); await initPdfJs();
+    const pdfs = [];
+    for (const f of files) {
+      const bytes = await f.arrayBuffer();
+      const doc = await pdfjsLib.getDocument({ data: new Uint8Array(bytes.slice(0)) }).promise;
+      pdfs.push({ name: f.name, bytes, doc, numPages: doc.numPages });
+    }
+    state.pdfs = pdfs;
+    state.sheets = [];
+    pdfs.forEach((p, fi) => { for (let n = 1; n <= p.numPages; n++) state.sheets.push({ fileIdx: fi, pageNum: n, highlights: null, fragCount: null }); });
+    $('#pidInfo').textContent = `${pdfs.length} file${pdfs.length > 1 ? 's' : ''}, ${state.sheets.length} sheet${state.sheets.length > 1 ? 's' : ''}.`;
+    state.report = null; renderReport(); renderSheetSelect(); setStatus('');
+    state.current = -1; showSheet(0);
+  } catch (err) { setStatus('Could not open a PDF: ' + err.message, true); }
+  updateControls();
+});
+
+function renderSheetSelect() {
+  const sel = $('#sheetSel'); sel.innerHTML = '';
+  state.sheets.forEach((s, i) => {
+    const o = document.createElement('option'); o.value = i;
+    let extra = '';
+    if (s.highlights) { const n = visibleCount(s); extra = n ? ` (${n})` : ' (none)'; }
+    o.textContent = `${i + 1}. ${sheetLabel(s)}${extra}`;
+    sel.appendChild(o);
+  });
+  if (state.current >= 0) sel.value = state.current;
+}
+const visibleCount = s => s.highlights ? s.highlights.filter(h => h.tier !== 'other' || state.opts.showOther).length : 0;
+
+// ---------- options ----------
+$('#optOther').addEventListener('change', e => { state.opts.showOther = e.target.checked; renderSheetSelect(); if (state.current >= 0) showSheet(state.current); });
+$('#optLegend').addEventListener('change', e => state.opts.legend = e.target.checked);
+$('#optHits').addEventListener('change', e => state.opts.onlyHits = e.target.checked);
+$('#optDebug').addEventListener('change', e => { state.opts.debug = e.target.checked; if (state.current >= 0) showSheet(state.current); });
+
+function invalidate() {
+  state.sheets.forEach(s => { s.highlights = null; s.fragCount = null; });
+  state.report = null; renderReport(); renderSheetSelect();
+  if (state.current >= 0) showSheet(state.current);
+  updateControls();
+}
+
+function updateControls() {
+  const anyType = [...state.types.values()].some(t => t.on);
+  $('#scanBtn').disabled = state.busy || !(state.eq && state.eq.tags.length && state.sheets.length && anyType);
+  const has = state.sheets.length > 0;
+  ['#prevBtn', '#nextBtn', '#sheetSel', '#zoomIn', '#zoomOut', '#zoomFit'].forEach(id => $(id).disabled = !has);
+  $('#dlBtn').disabled = state.busy || !state.report;
+}
+
+// ---------- styling shared by preview and PDF ----------
+const lineScale = (w, h) => Math.max(1, Math.max(w, h) / 1100);
+function styleFor(tier, ls) {
+  if (tier === 'exact') return { fill: 0.42, bw: 1.8 * ls, dash: null };
+  if (tier === 'prefix') return { fill: 0.34, bw: 1.4 * ls, dash: [5 * ls, 3 * ls] };
+  return { fill: 0.14, bw: 0, dash: null };
+}
+function padded(box, ls) {
+  const w = box[2] - box[0], h = box[3] - box[1];
+  const pad = Math.max(1.5 * ls, Math.min(w, h) * 0.22);
+  return [box[0] - pad, box[1] - pad, box[2] + pad, box[3] + pad];
+}
+const TIER_ORDER = { other: 0, prefix: 1, exact: 2 };
+function drawableHighlights(s) {
+  return s.highlights.filter(h => h.tier !== 'other' || state.opts.showOther).sort((a, b) => TIER_ORDER[a.tier] - TIER_ORDER[b.tier]);
+}
+
+// ---------- scanning ----------
+$('#scanBtn').addEventListener('click', runScan);
+async function runScan() {
+  const sel = [...state.types.entries()].filter(([, t]) => t.on).map(([p]) => p);
+  if (!sel.length || !state.sheets.length) return;
+  const prefixes = sel.slice().sort((a, b) => b.length - a.length);
+  const byNorm = new Map(), byPrefix = new Map(sel.map(p => [p, []]));
+  for (const t of state.eq.tags) if (byPrefix.has(t.prefix)) { byNorm.set(t.norm, t.raw); byPrefix.get(t.prefix).push(t); }
+  state.busy = true; state.report = null; renderReport(); updateControls();
+  try {
+    await initPdfJs();
+    let totalFrags = 0;
+    for (let i = 0; i < state.sheets.length; i++) {
+      setStatus(`Scanning sheet ${i + 1} of ${state.sheets.length}...`);
+      const s = state.sheets[i];
+      const page = await state.pdfs[s.fileIdx].doc.getPage(s.pageNum);
+      const tc = await page.getTextContent();
+      const frags = toFrags(tc.items);
+      s.fragCount = frags.length; totalFrags += frags.length;
+      s.highlights = detect(frags, prefixes, byNorm, byPrefix);
+      if (i % 4 === 0) await new Promise(r => setTimeout(r));
+    }
+    state.report = buildReport(sel);
+    renderReport(); renderSheetSelect();
+    if (totalFrags === 0) setStatus('These PDFs have no readable text, so they are probably scanned images. Highlighting needs text in the PDF.', true);
+    else setStatus(`Scan finished: ${state.sheets.filter(s => visibleCount(s) > 0).length} of ${state.sheets.length} sheets have highlights.`);
+    const firstHit = state.sheets.findIndex(s => visibleCount(s) > 0);
+    state.current = -1; showSheet(firstHit >= 0 ? firstHit : 0);
+  } catch (err) { setStatus('Scan failed: ' + err.message, true); }
+  state.busy = false; updateControls();
+}
+
+function buildReport(sel) {
+  const exactMap = new Map(), partialMap = new Map();
+  for (const s of state.sheets) {
+    const lab = sheetLabel(s);
+    for (const h of s.highlights) {
+      if (h.tier === 'exact') { (exactMap.get(h.tag) || exactMap.set(h.tag, new Set()).get(h.tag)).add(lab); }
+      else if (h.tier === 'prefix') for (const c of h.cands) (partialMap.get(c) || partialMap.set(c, new Set()).get(c)).add(lab);
+    }
+  }
+  const tags = state.eq.tags.filter(t => sel.includes(t.prefix));
+  const exact = [], partial = [], none = [];
+  for (const t of tags) {
+    if (exactMap.has(t.raw)) exact.push({ tag: t.raw, sheets: [...exactMap.get(t.raw)] });
+    else if (partialMap.has(t.raw)) partial.push({ tag: t.raw, sheets: [...partialMap.get(t.raw)] });
+    else none.push({ tag: t.raw });
+  }
+  return { total: tags.length, exact, partial, none, sel };
+}
+
+function renderReport() {
+  const el = $('#report'); const r = state.report;
+  if (!r) { el.innerHTML = ''; return; }
+  const list = (arr, fmt) => {
+    const shown = arr.slice(0, 300).map(fmt).join(', ');
+    return esc(shown) + (arr.length > 300 ? ` ... and ${arr.length - 300} more (all are on the cover page of the pack)` : '');
+  };
+  el.innerHTML = `<h3>Scan result</h3>
+    <p>${r.total} listed tags in the selected types: <b>${r.exact.length}</b> read in full, <b>${r.partial.length}</b> matched by the start of the tag only, <b>${r.none.length}</b> not found on any sheet.</p>
+    ${r.none.length ? `<details><summary>Not found on any sheet (${r.none.length})</summary><div class="taglist">${list(r.none, x => x.tag)}</div></details>` : ''}
+    ${r.partial.length ? `<details><summary>Start of tag matched, check on the sheet (${r.partial.length})</summary><div class="taglist">${list(r.partial, x => x.tag + ' [' + x.sheets.slice(0, 2).join('; ') + ']')}</div></details>` : ''}`;
+}
+
+// ---------- preview ----------
+let renderToken = 0, pageCache = null;
+async function showSheet(i) {
+  if (i < 0 || i >= state.sheets.length) return;
+  state.current = i; $('#sheetSel').value = i;
+  const token = ++renderToken;
+  const s = state.sheets[i];
+  try {
+    await initPdfJs();
+    const page = await state.pdfs[s.fileIdx].doc.getPage(s.pageNum);
+    const base = page.getViewport({ scale: 1 });
+    const fit = Math.max(200, $('#stage').clientWidth - 34) / base.width;
+    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    const cssScale = fit * state.zoom;
+    let pxScale = cssScale * dpr;
+    const px = base.width * base.height * pxScale * pxScale;
+    if (px > 36e6) pxScale *= Math.sqrt(36e6 / px);
+    const vp = page.getViewport({ scale: pxScale });
+    const key = i + '|' + pxScale.toFixed(4);
+    let bmp;
+    if (pageCache && pageCache.key === key) bmp = pageCache.canvas;
+    else {
+      bmp = document.createElement('canvas'); bmp.width = Math.ceil(vp.width); bmp.height = Math.ceil(vp.height);
+      await page.render({ canvasContext: bmp.getContext('2d'), viewport: vp }).promise;
+      if (token !== renderToken) return;
+      pageCache = { key, canvas: bmp };
+    }
+    const cv = $('#sheetCanvas');
+    cv.width = bmp.width; cv.height = bmp.height;
+    cv.style.width = (bmp.width / (pxScale / cssScale)) + 'px';
+    cv.style.display = 'block'; $('#emptyMsg').style.display = 'none';
+    const ctx = cv.getContext('2d'); ctx.drawImage(bmp, 0, 0);
+    if (s.highlights) drawOverlay(ctx, vp, s, base);
+    updateSheetInfo();
+  } catch (err) { setStatus('Could not draw that sheet: ' + err.message, true); }
+}
+
+function drawOverlay(ctx, vp, s, base) {
+  const ls = lineScale(base.width, base.height);
+  for (const h of drawableHighlights(s)) {
+    const t = state.types.get(h.prefix); if (!t) continue;
+    const [x1, y1, x2, y2] = padded(h.box, ls);
+    const p1 = vp.convertToViewportPoint(x1, y1), p2 = vp.convertToViewportPoint(x2, y2);
+    const x = Math.min(p1[0], p2[0]), y = Math.min(p1[1], p2[1]), w = Math.abs(p1[0] - p2[0]), hh = Math.abs(p1[1] - p2[1]);
+    const st = styleFor(h.tier, ls), c = hexToRgb(t.color);
+    ctx.fillStyle = `rgba(${Math.round(c.r * 255)},${Math.round(c.g * 255)},${Math.round(c.b * 255)},${st.fill})`;
+    ctx.fillRect(x, y, w, hh);
+    if (st.bw > 0) {
+      ctx.lineWidth = st.bw * vp.scale; ctx.strokeStyle = t.color;
+      ctx.setLineDash(st.dash ? st.dash.map(d => d * vp.scale) : []);
+      ctx.strokeRect(x, y, w, hh); ctx.setLineDash([]);
+    }
+    if (state.opts.debug) {
+      const fs = Math.max(11, 9 * ls * vp.scale);
+      ctx.font = `600 ${fs}px sans-serif`; ctx.lineWidth = fs / 4; ctx.strokeStyle = '#fff'; ctx.fillStyle = '#111';
+      ctx.strokeText(h.label, x, y - 3); ctx.fillText(h.label, x, y - 3);
+    }
+  }
+}
+
+function updateSheetInfo() {
+  const s = state.sheets[state.current]; if (!s) { $('#sheetInfo').textContent = ''; return; }
+  let t = `Sheet ${state.current + 1} of ${state.sheets.length}: ${sheetLabel(s)}`;
+  if (s.highlights) {
+    const counts = new Map();
+    s.highlights.forEach(h => { const c = counts.get(h.prefix) || { on: 0, other: 0 }; h.tier === 'other' ? c.other++ : c.on++; counts.set(h.prefix, c); });
+    const parts = [...counts.entries()].map(([p, c]) => `${p} ${c.on}` + (c.other ? ` (+${c.other} not on list)` : ''));
+    t += ` | ${s.fragCount} text fragments | ${parts.length ? parts.join(', ') : 'no highlights'}`;
+  }
+  $('#sheetInfo').textContent = t;
+}
+
+$('#sheetSel').addEventListener('change', e => showSheet(+e.target.value));
+$('#prevBtn').addEventListener('click', () => showSheet(Math.max(0, state.current - 1)));
+$('#nextBtn').addEventListener('click', () => showSheet(Math.min(state.sheets.length - 1, state.current + 1)));
+$('#zoomIn').addEventListener('click', () => { state.zoom = Math.min(8, state.zoom * 1.3); showSheet(state.current); });
+$('#zoomOut').addEventListener('click', () => { state.zoom = Math.max(0.4, state.zoom / 1.3); showSheet(state.current); });
+$('#zoomFit').addEventListener('click', () => { state.zoom = 1; showSheet(state.current); });
+window.addEventListener('resize', () => { if (state.current >= 0) { clearTimeout(window.__rz); window.__rz = setTimeout(() => showSheet(state.current), 200); } });
+
+// ---------- build the PDF pack ----------
+$('#dlBtn').addEventListener('click', buildPack);
+const san = s => String(s).replace(/[^\x20-\x7E]/g, '?');
+
+async function buildPack() {
+  if (!state.report) return;
+  state.busy = true; updateControls();
+  try {
+    const { PDFDocument, rgb, StandardFonts } = PDFLib;
+    const out = await PDFDocument.create();
+    const font = await out.embedFont(StandardFonts.Helvetica), bold = await out.embedFont(StandardFonts.HelveticaBold);
+    const inc = state.sheets.map((s, i) => ({ s, i })).filter(({ s }) => !state.opts.onlyHits || visibleCount(s) > 0);
+    if (!inc.length) { setStatus('No sheets to include. Untick "Leave out sheets with no highlights" or change the types.', true); state.busy = false; updateControls(); return; }
+    const r = state.report, sel = r.sel;
+
+    // --- cover pages ---
+    const W = 595.28, H = 841.89, M = 40, ink = rgb(0.09, 0.13, 0.17), grey = rgb(0.35, 0.4, 0.45);
+    let page = out.addPage([W, H]), y = H - M;
+    const need = h => { if (y - h < M) { page = out.addPage([W, H]); y = H - M; } };
+    const text = (t, o = {}) => {
+      const size = o.size || 10, f = o.bold ? bold : font, indent = o.indent || 0;
+      for (const ln of wrap(san(t), f, size, W - 2 * M - indent)) {
+        need(size * 1.4); page.drawText(ln, { x: M + indent, y: y - size, size, font: f, color: o.color || ink }); y -= size * 1.4;
+      }
+    };
+    const gap = n => { y -= n; };
+    function wrap(t, f, size, maxW) {
+      const words = t.split(/\s+/), lines = []; let cur = '';
+      for (const w of words) { const c = cur ? cur + ' ' + w : w; if (f.widthOfTextAtSize(c, size) > maxW && cur) { lines.push(cur); cur = w; } else cur = c; }
+      if (cur) lines.push(cur); return lines.length ? lines : [''];
+    }
+    text('P&ID site pack', { size: 22, bold: true }); gap(2);
+    text(`Prepared ${new Date().toLocaleDateString('en-IE')}   |   List: ${state.eq.name}   |   ${inc.length} sheets`, { size: 9, color: grey }); gap(10);
+
+    text('Colours', { size: 13, bold: true }); gap(2);
+    const tot = new Map(); // per type: exact, partial, none
+    sel.forEach(p => tot.set(p, { e: 0, p: 0, n: 0 }));
+    r.exact.forEach(x => tot.get(x.tag.toUpperCase().match(/^[A-Z]+/)[0]).e++);
+    r.partial.forEach(x => tot.get(x.tag.toUpperCase().match(/^[A-Z]+/)[0]).p++);
+    r.none.forEach(x => tot.get(x.tag.toUpperCase().match(/^[A-Z]+/)[0]).n++);
+    for (const p of sel) {
+      const c = hexToRgb(state.types.get(p).color), t = tot.get(p);
+      need(16);
+      page.drawRectangle({ x: M, y: y - 12, width: 26, height: 12, color: rgb(c.r, c.g, c.b), opacity: 0.42, borderColor: rgb(c.r, c.g, c.b), borderWidth: 1.6 });
+      page.drawText(san(p), { x: M + 36, y: y - 10, size: 10.5, font: bold, color: ink });
+      page.drawText(san(`${t.e} read in full, ${t.p} start-of-tag only, ${t.n} not found`), { x: M + 90, y: y - 10, size: 9.5, font, color: ink });
+      y -= 18;
+    }
+    gap(6);
+    text('How to read the highlights', { size: 11, bold: true }); gap(1);
+    const key = [
+      ['solid', 'Solid border: the full tag was read from the drawing and is on the list.'],
+      ['dash', 'Dashed border: the start of the tag is on the list but the loop number was not confirmed. Check it on site.'],
+      ['faint', 'Faint shading: same equipment type, but not on the list.']
+    ];
+    for (const [k, t] of key) {
+      need(16);
+      const o = { x: M, y: y - 11, width: 26, height: 11, color: rgb(0.12, 0.3, 0.36), opacity: k === 'solid' ? 0.42 : k === 'dash' ? 0.34 : 0.14 };
+      if (k !== 'faint') { o.borderColor = rgb(0.12, 0.3, 0.36); o.borderWidth = k === 'solid' ? 1.8 : 1.4; if (k === 'dash') o.borderDashArray = [4, 2.5]; }
+      page.drawRectangle(o);
+      page.drawText(san(t).slice(0, 120), { x: M + 36, y: y - 9, size: 9, font, color: ink });
+      y -= 16;
+    }
+    gap(8);
+    text('Sheets in this pack', { size: 13, bold: true }); gap(2);
+    inc.forEach(({ s }, k) => {
+      const counts = new Map();
+      s.highlights.forEach(h => { if (h.tier === 'other' && !state.opts.showOther) return; const c = counts.get(h.prefix) || { on: 0, other: 0 }; h.tier === 'other' ? c.other++ : c.on++; counts.set(h.prefix, c); });
+      const parts = [...counts.entries()].map(([p, c]) => `${p} ${c.on}` + (c.other ? ` (+${c.other})` : ''));
+      text(`${k + 1}.  ${sheetLabel(s)}   -   ${parts.join(', ') || 'none'}`, { size: 9, indent: 0 });
+    });
+    text('Numbers in brackets are same-type tags that are not on the list.', { size: 8.5, color: grey });
+    gap(8);
+    if (r.none.length) {
+      text(`Not found on any sheet (${r.none.length}) - locate by other means`, { size: 12, bold: true }); gap(1);
+      text(r.none.map(x => x.tag).join(', '), { size: 9 }); gap(6);
+    }
+    if (r.partial.length) {
+      text(`Start of tag matched only (${r.partial.length}) - check on the sheet`, { size: 12, bold: true }); gap(1);
+      text(r.partial.map(x => `${x.tag} [${x.sheets.slice(0, 2).join('; ')}]`).join(', '), { size: 9 });
+    }
+
+    // --- sheets ---
+    const groups = new Map();
+    inc.forEach(x => { if (!groups.has(x.s.fileIdx)) groups.set(x.s.fileIdx, []); groups.get(x.s.fileIdx).push(x); });
+    let done = 0;
+    for (const [fi, grp] of groups) {
+      setStatus(`Building pack: ${state.pdfs[fi].name}...`);
+      await new Promise(r => setTimeout(r));
+      const src = await PDFDocument.load(state.pdfs[fi].bytes, { ignoreEncryption: true });
+      const copied = await out.copyPages(src, grp.map(x => x.s.pageNum - 1));
+      copied.forEach((p, k) => { out.addPage(p); drawOnPage(p, grp[k].s, { rgb, font, bold }); done++; });
+    }
+
+    const bytes = await out.save();
+    const blob = new Blob([bytes], { type: 'application/pdf' });
+    const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
+    a.download = 'site-pack-' + new Date().toISOString().slice(0, 10) + '.pdf';
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+    setStatus(`Saved ${a.download}: cover plus ${done} sheets.`);
+  } catch (err) { setStatus('Could not build the pack: ' + err.message, true); }
+  state.busy = false; updateControls();
+}
+
+function drawOnPage(p, s, { rgb, font, bold }) {
+  const cb = p.getCropBox();
+  const ls = lineScale(cb.width, cb.height);
+  for (const h of drawableHighlights(s)) {
+    const t = state.types.get(h.prefix); if (!t) continue;
+    const [x1, y1, x2, y2] = padded(h.box, ls), st = styleFor(h.tier, ls), c = hexToRgb(t.color);
+    const o = { x: x1, y: y1, width: x2 - x1, height: y2 - y1, color: rgb(c.r, c.g, c.b), opacity: st.fill };
+    if (st.bw > 0) { o.borderColor = rgb(c.r, c.g, c.b); o.borderWidth = st.bw; o.borderOpacity = 0.95; if (st.dash) o.borderDashArray = st.dash; }
+    p.drawRectangle(o);
+  }
+  if (!state.opts.legend) return;
+  const counts = new Map();
+  s.highlights.forEach(h => { if (h.tier === 'other' && !state.opts.showOther) return; const c = counts.get(h.prefix) || { on: 0, other: 0 }; h.tier === 'other' ? c.other++ : c.on++; counts.set(h.prefix, c); });
+  const rows = [...counts.entries()].filter(([, c]) => c.on + c.other > 0);
+  if (!rows.length) return;
+  const fs = 9 * ls, rowH = fs * 1.6, pad = fs * 0.7, sw = fs * 1.6;
+  const labels = rows.map(([pf, c]) => san(`${pf}   ${c.on}` + (c.other ? `   (+${c.other} not on list)` : '')));
+  const width = pad * 2 + sw + fs * 0.6 + Math.max(...labels.map(l => bold.widthOfTextAtSize(l, fs)));
+  const height = pad * 2 + rowH * rows.length - (rowH - fs);
+  const x0 = cb.x + 10 * ls, yTop = cb.y + cb.height - 10 * ls;
+  p.drawRectangle({ x: x0, y: yTop - height, width, height, color: rgb(1, 1, 1), opacity: 0.92, borderColor: rgb(0.45, 0.5, 0.55), borderWidth: 0.8 * ls });
+  rows.forEach(([pf], k) => {
+    const c = hexToRgb(state.types.get(pf).color), ry = yTop - pad - fs - k * rowH;
+    p.drawRectangle({ x: x0 + pad, y: ry - fs * 0.15, width: sw, height: fs, color: rgb(c.r, c.g, c.b), opacity: 0.5, borderColor: rgb(c.r, c.g, c.b), borderWidth: 1.4 * ls });
+    p.drawText(labels[k], { x: x0 + pad + sw + fs * 0.6, y: ry, size: fs, font: bold, color: rgb(0.09, 0.13, 0.17) });
+  });
+}
+
+// ---------- start ----------
+renderTypes(); updateControls();
+if (typeof pdfjsLib === 'undefined' || typeof PDFLib === 'undefined') setStatus('A library did not load. This tool needs an internet connection the first time it opens.', true);
+</script>
+</body>
+</html>
